@@ -1,4 +1,4 @@
-/**
+﻿/**
  * HAHA OPERATING SYSTEM V1.0
  * Hệ thống Quản trị Doanh nghiệp Du lịch Hợp nhất - HaHa Eco Travel ERP
  * CHUẨN NGHIỆP VỤ HOA HỒNG:
@@ -16783,7 +16783,11 @@ function escapeHtml(str) {
     .replace(/'/g, "&#039;");
 }
 
-document.addEventListener('DOMContentLoaded', initApp);
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initApp);
+} else {
+  initApp();
+}
 
 // ==========================================
 // ĐĂNG KÝ TOÀN CỤC (WINDOW BINDINGS)
@@ -17113,15 +17117,6 @@ function initCloudSync() {
       pullFromCloud(true);
     }
   }, 10000);
-}
-  window.addEventListener('online', () => {
-    updateCloudSyncUi();
-    if (cloudSyncConfig.enabled) pullFromCloud(true);
-  });
-  window.addEventListener('offline', () => {
-    cloudSyncConfig.status = 'offline';
-    updateCloudSyncUi();
-  });
 }
 
 function normalizeCloudUrl(rawUrl) {
