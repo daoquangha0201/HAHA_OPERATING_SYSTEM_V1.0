@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
@@ -163,7 +163,7 @@
           </div>
         </div>
 
-                <!-- LỐI TẮT TRUY CẬP NHANH GIÁM ĐỐC TRỰC TIẾP -->
+        <!-- LỐI TẮT TRUY CẬP NHANH GIÁM ĐỐC TRỰC TIẾP -->
         <div class="pt-1">
           <button type="button" onclick="quickLogin('ceo')" class="w-full py-3 px-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold rounded-2xl shadow-md hover:shadow-lg transition-all active:scale-95 flex items-center justify-between group">
             <div class="flex items-center space-x-2.5">
@@ -435,41 +435,48 @@
   <!-- ======================================================== -->
   <div id="main-app" class="hidden flex-1 flex flex-col min-h-screen">
     
-    <!-- THANH TIÊU ĐỀ ĐỈNH (TOPBAR) -->
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center h-16">
+    <!-- THANH TIÊU ĐỀ ĐỈNH (TOPBAR - ĐÃ TỐI ƯU SIÊU GỌN CHO MOBILE) -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+      <div class="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-14 sm:h-16 gap-1.5">
           
-          <div class="flex items-center space-x-3">
-            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-700 to-brand-500 flex items-center justify-center text-white shadow-sm">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <!-- Logo & Tiêu đề thương hiệu -->
+          <div class="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-shrink">
+            <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-brand-700 to-brand-500 flex-shrink-0 flex items-center justify-center text-white shadow-sm">
+              <svg class="w-4 h-4 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-.778.099-1.533.284-2.253"/>
               </svg>
             </div>
-            <div>
-              <div class="flex items-center space-x-2">
-                <span class="text-base font-extrabold text-slate-900 tracking-tight">HAHA ECO TRAVEL</span>
-                <span class="px-2 py-0.5 text-[10px] font-bold bg-brand-100 text-brand-800 rounded-full border border-brand-200">OS V1.0</span>
+            <div class="min-w-0 truncate">
+              <div class="flex items-center space-x-1.5">
+                <span class="text-xs sm:text-base font-extrabold text-slate-900 tracking-tight truncate">HAHA ECO TRAVEL</span>
+                <span class="px-1.5 py-0.2 text-[8px] sm:text-[10px] font-bold bg-brand-100 text-brand-800 rounded-full border border-brand-200 flex-shrink-0">V1.0</span>
               </div>
-              <p class="text-[11px] text-slate-400">Hệ thống Quản lý Doanh nghiệp Du lịch Hợp nhất</p>
+              <p class="text-[10px] text-slate-400 hidden sm:block truncate">Hệ thống Quản lý Doanh nghiệp Du lịch Hợp nhất</p>
             </div>
           </div>
 
-          <div class="flex items-center space-x-3">
-            <div class="flex items-center space-x-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl">
-              <div id="user-avatar" class="w-8 h-8 rounded-lg bg-brand-700 text-white flex items-center justify-center font-bold text-xs">
+          <!-- Nhóm công cụ bên phải (Tối ưu co giãn cho Mobile) -->
+          <div class="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
+            <!-- Thẻ User hồ sơ -->
+            <div class="flex items-center space-x-1.5 bg-slate-50 border border-slate-200 px-1.5 py-1 sm:px-3 sm:py-1.5 rounded-xl">
+              <div id="user-avatar" class="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-brand-700 text-white flex items-center justify-center font-bold text-xs flex-shrink-0">
                 U
               </div>
-              <div class="text-left">
+              <div class="text-left hidden sm:block">
                 <div class="text-xs font-bold text-slate-800 flex items-center space-x-1.5">
                   <span id="user-display-name">Người dùng</span>
                   <span id="user-role-badge" class="role-badge role-ceo">CEO</span>
                 </div>
                 <div class="text-[10px] text-slate-400 font-mono" id="user-username">@ceo</div>
               </div>
+              <div class="sm:hidden">
+                <span id="user-role-badge-mobile" class="role-badge role-ceo text-[9px] px-1 py-0.2">CEO</span>
+              </div>
             </div>
 
-            <select id="quick-role-select" onchange="switchUserRole(this.value)" class="hidden md:block text-xs bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-700 font-medium focus:outline-none focus:ring-1 focus:ring-brand-500">
+            <!-- Chuyển vai trò nhanh cho Desktop -->
+            <select id="quick-role-select" onchange="switchUserRole(this.value)" class="hidden lg:block text-xs bg-white border border-slate-300 rounded-lg px-2 py-1 text-slate-700 font-medium focus:outline-none focus:ring-1 focus:ring-brand-500">
               <option value="ceo">Chuyển: 👑 Giám đốc (CEO)</option>
               <option value="sale01">Chuyển: 💼 Sale (Văn An)</option>
               <option value="dieuhanh">Chuyển: 🧭 Điều hành (Đức Huy)</option>
@@ -483,22 +490,22 @@
 
             <!-- NÚT CHUÔNG THÔNG BÁO BÀN GIAO LIÊN PHÒNG BAN -->
             <div class="relative">
-              <button id="notif-bell-btn" onclick="toggleNotificationCenter()" class="relative p-2 text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-all flex items-center justify-center focus:outline-none" title="Trung tâm Thông Báo & Chuyển Giao Liên Phòng Ban">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <button id="notif-bell-btn" onclick="toggleNotificationCenter()" class="relative p-1.5 sm:p-2 text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-all flex items-center justify-center focus:outline-none" title="Thông Báo Liên Phòng Ban">
+                <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
                 </svg>
-                <span id="notif-badge-count" class="hidden absolute -top-1 -right-1 px-1.5 py-0.2 bg-rose-600 text-white font-bold text-[10px] rounded-full shadow-sm animate-pulse">0</span>
+                <span id="notif-badge-count" class="hidden absolute -top-1 -right-1 px-1.5 py-0.2 bg-rose-600 text-white font-bold text-[9px] rounded-full shadow-sm animate-pulse">0</span>
               </button>
 
               <!-- DROPDOWN TRUNG TÂM THÔNG BÁO -->
-              <div id="notif-dropdown" class="hidden absolute right-0 mt-2 w-96 max-w-[90vw] bg-white rounded-2xl border border-slate-200 shadow-2xl z-50 overflow-hidden text-xs">
+              <div id="notif-dropdown" class="hidden absolute right-0 mt-2 w-80 sm:w-96 max-w-[92vw] bg-white rounded-2xl border border-slate-200 shadow-2xl z-50 overflow-hidden text-xs">
                 <!-- Header -->
                 <div class="p-3 bg-slate-900 text-white flex items-center justify-between">
                   <div class="flex items-center space-x-2">
                     <span class="text-base">🔔</span>
                     <div>
                       <h3 class="font-bold text-xs">Thông Báo & Chuyển Giao</h3>
-                      <p class="text-[10px] text-slate-300">Liên phòng ban: Sale &bull; Điều hành &bull; Kế toán &bull; CTV</p>
+                      <p class="text-[10px] text-slate-300">Sale &bull; Điều hành &bull; Kế toán &bull; CTV</p>
                     </div>
                   </div>
                   <button onclick="markAllNotificationsAsRead()" class="text-[10px] bg-white/10 hover:bg-white/20 px-2 py-1 rounded-lg text-white font-semibold transition-colors">
@@ -529,31 +536,57 @@
               </div>
             </div>
 
-                        <button onclick="openBackupRestoreModal()" id="cloud-sync-status-btn" title="Đồng bộ Đám mây Thời gian thực (Real-time Cloud)" class="px-2.5 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-colors flex items-center space-x-1.5">
-              <span id="cloud-sync-dot" class="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <!-- NÚT CLOUD SYNC -->
+            <button onclick="openBackupRestoreModal()" id="cloud-sync-status-btn" title="Đồng bộ Đám mây Thời gian thực" class="p-1.5 sm:px-2.5 sm:py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl transition-colors flex items-center space-x-1">
+              <span id="cloud-sync-dot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
               <span class="hidden md:inline text-[11px] font-bold" id="cloud-sync-text">Cloud Sync</span>
-              <span class="md:hidden">☁️</span>
             </button>
 
-            <button onclick="openChangePasswordModal()" title="Đổi mật khẩu tài khoản" class="px-2.5 py-1.5 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors flex items-center space-x-1">
+            <!-- NÚT ĐỔI MẬT KHẨU -->
+            <button onclick="openChangePasswordModal()" title="Đổi mật khẩu tài khoản" class="hidden sm:flex px-2 py-1.5 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors items-center space-x-1">
               <span>🔑</span>
               <span class="hidden lg:inline">Đổi MK</span>
             </button>
 
-            <button onclick="handleLogout()" class="px-3 py-1.5 text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-lg transition-colors flex items-center space-x-1">
+            <!-- NÚT ĐĂNG XUẤT -->
+            <button onclick="handleLogout()" title="Đăng xuất khỏi hệ thống" class="p-1.5 sm:px-2.5 sm:py-1.5 text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition-colors flex items-center space-x-1">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-              <span class="hidden sm:inline">Đăng xuất</span>
+              <span class="hidden md:inline">Đăng xuất</span>
             </button>
           </div>
         </div>
       </div>
     </header>
 
+    <!-- THANH ĐIỀU HƯỚNG PHÂN HỆ DI ĐỘNG (MOBILE FUNCTION BAR - LƯỚT LÊN XUỐNG KHÔNG TRÀN NGANG) -->
+    <div class="md:hidden bg-white border-b border-slate-200 px-2.5 py-2 sticky top-14 z-20 shadow-xs flex items-center justify-between gap-2">
+      <div class="flex items-center space-x-2 flex-1 min-w-0">
+        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex-shrink-0">Phân hệ:</span>
+        <select id="mobile-module-select" onchange="switchModule(parseInt(this.value))" class="flex-1 min-w-0 bg-slate-50 text-slate-800 text-xs font-extrabold rounded-xl px-2.5 py-1.5 border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500">
+          <option value="1">📊 1. Bảng điều hành CEO</option>
+          <option value="2">👥 2. CRM & Khách hàng</option>
+          <option value="3">🌱 3. Quản lý CTV & Mã Ref</option>
+          <option value="4">💼 4. Báo giá & Đơn tour</option>
+          <option value="5">🧭 5. Điều hành tour & NCC</option>
+          <option value="6">💰 6. Kế toán & Thuế GTGT</option>
+          <option value="7">📈 7. Hoa hồng & Đối soát</option>
+          <option value="8">🏖️ 8. Ngân hàng Tour</option>
+          <option value="9">🛡️ 9. Nhật ký Audit Log</option>
+          <option value="10" id="opt-mobile-mod10" class="hidden">🌱 10. Cổng CTV</option>
+          <option value="11" id="opt-mobile-mod11" class="hidden">🏨 11. Cổng Đối Tác NCC</option>
+        </select>
+      </div>
+      <button type="button" onclick="toggleMobileSidebar()" id="btn-toggle-mobile-sidebar" class="px-2.5 py-1.5 bg-brand-50 hover:bg-brand-100 text-brand-700 text-xs font-bold rounded-xl border border-brand-200 flex items-center space-x-1 flex-shrink-0 active:scale-95 transition-all">
+        <span id="mobile-menu-icon">☰</span>
+        <span class="text-[11px]">Menu</span>
+      </button>
+    </div>
+
     <!-- BỐ CỤC CHÍNH: SIDEBAR + NỘI DUNG PHÂN HỆ -->
-    <div class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col md:flex-row gap-6">
-      
-      <!-- SIDEBAR -->
-      <aside class="w-full md:w-64 flex-shrink-0">
+    <div class="flex-1 max-w-7xl w-full mx-auto px-2.5 sm:px-6 lg:px-8 py-4 sm:py-6 flex flex-col md:flex-row gap-4 sm:gap-6">
+
+      <!-- SIDEBAR (ẨN MẶC ĐỊNH TRÊN MOBILE ĐỂ KHÔNG PHẢI CUỘN 11 NÚT, HIỆN KHI BẤM MENU) -->
+      <aside id="main-sidebar" class="hidden md:block w-full md:w-64 flex-shrink-0 transition-all">
         <div class="bg-white rounded-2xl border border-slate-200 p-3 shadow-sm sticky top-24 space-y-1">
           
           <div class="px-3 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider" id="sidebar-title">
@@ -1074,109 +1107,188 @@
         </div>
 
         <!-- ========================================== -->
-        <!-- VIEW 2: PHÂN HỆ CRM (GIỮ NGUYÊN) -->
+        <!-- VIEW 2: CƠ SỞ DỮ LIỆU KHÁCH HÀNG & KẾ HOẠCH CHĂM SÓC ĐỊNH KỲ (CRM & RETENTION) -->
         <!-- ========================================== -->
         <div id="view-module-2" class="space-y-6">
           
+          <!-- Header Phân hệ 2 -->
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h2 class="text-xl font-extrabold text-slate-900 flex items-center space-x-2">
-                <span>👥 Phân hệ 2: CRM & Quản lý Khách hàng</span>
-              </h2>
-              <p class="text-xs text-slate-500">Quản lý toàn diện nhu cầu tour sinh thái và thông tin khách hàng</p>
+              <div class="flex items-center space-x-2">
+                <h2 class="text-xl font-extrabold text-slate-900 flex items-center space-x-2">
+                  <span>👥 Phân hệ 2: Cơ Sở Dữ Liệu Khách Hàng &amp; Chăm Sóc Định Kỳ</span>
+                </h2>
+                <span class="px-2 py-0.5 text-[10px] font-bold bg-emerald-100 text-emerald-800 rounded-full border border-emerald-300">Tài Sản Doanh Nghiệp</span>
+              </div>
+              <p class="text-xs text-slate-500 mt-0.5">Lưu trữ tập trung trọn đời &bull; Phân loại Đoàn, Doanh nghiệp, Khách lẻ &bull; Kế hoạch chăm sóc khách cũ định kỳ &bull; Bảo mật chống thất thoát dữ liệu độc quyền</p>
             </div>
 
-            <div class="flex items-center space-x-2">
-              <button id="btn-reset-demo" class="text-xs text-slate-500 hover:text-brand-600 px-3 py-2 bg-white border border-slate-200 rounded-xl transition-colors">
-                🔄 Nạp lại dữ liệu mẫu
+            <div class="flex items-center space-x-2 flex-wrap gap-2">
+              <button id="btn-reset-demo" class="text-xs text-slate-600 hover:text-brand-600 px-3 py-2 bg-white border border-slate-200 rounded-xl transition-colors">
+                🔄 Nạp lại dữ liệu
+              </button>
+              <button id="btn-export-customers-ceo" onclick="exportCustomerData()" class="inline-flex items-center px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl shadow-xs transition-all space-x-1.5" title="Chỉ CEO có quyền trích xuất dữ liệu">
+                <span>📤 Xuất Excel (CEO)</span>
               </button>
               <button id="btn-open-add-modal" class="inline-flex items-center px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl shadow-sm hover:shadow transition-all space-x-1.5">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                <span>+ Thêm khách hàng</span>
+                <span>+ Thêm khách hàng mới</span>
               </button>
             </div>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
-              <div class="flex items-center justify-between">
-                <p class="text-xs font-semibold uppercase text-slate-500">Tổng khách hàng</p>
-                <div class="p-2 bg-blue-50 text-blue-600 rounded-lg">👥</div>
+          <!-- BANNER BẢO VỆ TÀI SẢN DOANH NGHIỆP & CHỐNG MANG KHÁCH ĐI NƠI KHÁC -->
+          <div class="bg-gradient-to-r from-slate-900 via-brand-950 to-slate-900 text-white p-3.5 rounded-2xl border border-slate-800 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+            <div class="flex items-center space-x-3">
+              <div class="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-lg flex-shrink-0 border border-amber-500/30">
+                🛡️
               </div>
-              <div class="mt-2 flex items-baseline space-x-2">
-                <span id="stat-total-customers" class="text-2xl font-extrabold text-slate-900">0</span>
-                <span class="text-xs text-slate-400">khách</span>
-              </div>
-            </div>
-
-            <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
-              <div class="flex items-center justify-between">
-                <p class="text-xs font-semibold uppercase text-slate-500">Khách mới</p>
-                <div class="p-2 bg-amber-50 text-amber-600 rounded-lg">⚡</div>
-              </div>
-              <div class="mt-2 flex items-baseline space-x-2">
-                <span id="stat-new-customers" class="text-2xl font-extrabold text-amber-600">0</span>
-                <span class="text-xs text-slate-400">cần chăm sóc</span>
+              <div>
+                <div class="flex items-center space-x-2">
+                  <span class="text-xs font-bold text-amber-300 uppercase tracking-wider">Bảo Mật Dữ Liệu Khách Hàng (DLP &amp; Anti-Poaching Shield)</span>
+                  <span class="px-1.5 py-0.2 bg-rose-500/30 text-rose-300 text-[10px] font-bold rounded border border-rose-500/40">Chống Thất Thoát</span>
+                </div>
+                <p class="text-[11px] text-slate-300 mt-0.5">100% Khách hàng được mã hóa và bảo hộ độc quyền thuộc HAHA ECO TRAVEL. Số điện thoại được ẩn đối với Sale &amp; CTV; nghiêm cấm mang khách sang đối tác ngoài hoặc bán data. Mọi thao tác đều được lưu vào Nhật Ký Giám Sát (Audit Log).</p>
               </div>
             </div>
-
-            <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
-              <div class="flex items-center justify-between">
-                <p class="text-xs font-semibold uppercase text-slate-500">Đơn tour đã chốt</p>
-                <div class="p-2 bg-brand-50 text-brand-600 rounded-lg">✅</div>
-              </div>
-              <div class="mt-2 flex items-baseline space-x-2">
-                <span id="stat-booked-tours" class="text-2xl font-extrabold text-brand-700">0</span>
-                <span class="text-xs text-slate-400">thành công</span>
-              </div>
-            </div>
-
-            <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
-              <div class="flex items-center justify-between">
-                <p class="text-xs font-semibold uppercase text-slate-500">Tỷ lệ chốt</p>
-                <div class="p-2 bg-emerald-50 text-emerald-600 rounded-lg">📈</div>
-              </div>
-              <div class="mt-2 flex items-baseline space-x-2">
-                <span id="stat-conversion-rate" class="text-2xl font-extrabold text-slate-900">0%</span>
-                <span class="text-xs text-slate-400">hiệu suất</span>
-              </div>
+            <div class="flex items-center space-x-2 flex-shrink-0 self-end md:self-auto">
+              <span id="crm-security-status-badge" class="px-2.5 py-1 text-[11px] font-bold rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center space-x-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>Chế độ: Bảo vệ 5 lớp Active</span>
+              </span>
             </div>
           </div>
 
-          <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <!-- 5 THẺ CHỈ SỐ THỐNG KÊ CRM & PHÂN LOẠI KHÁCH HÀNG -->
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            <!-- Tổng khách -->
+            <div class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs">
+              <div class="flex items-center justify-between">
+                <p class="text-[11px] font-bold uppercase text-slate-500">Tổng khách hàng</p>
+                <div class="p-1.5 bg-blue-50 text-blue-600 rounded-lg text-xs">👥</div>
+              </div>
+              <div class="mt-2 flex items-baseline space-x-1.5">
+                <span id="stat-total-customers" class="text-xl font-extrabold text-slate-900">0</span>
+                <span class="text-[11px] text-slate-400">hồ sơ</span>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-1">Lưu trữ trọn đời</div>
+            </div>
+
+            <!-- Khách đoàn -->
+            <div class="bg-white p-3.5 rounded-2xl border border-indigo-200/80 shadow-xs bg-indigo-50/20">
+              <div class="flex items-center justify-between">
+                <p class="text-[11px] font-bold uppercase text-indigo-700">Khách đoàn (Group)</p>
+                <div class="p-1.5 bg-indigo-100 text-indigo-700 rounded-lg text-xs">🚩</div>
+              </div>
+              <div class="mt-2 flex items-baseline space-x-1.5">
+                <span id="stat-group-customers" class="text-xl font-extrabold text-indigo-800">0</span>
+                <span class="text-[11px] text-indigo-600 font-semibold">đoàn</span>
+              </div>
+              <div id="stat-group-pax" class="text-[10px] text-indigo-600 mt-1 font-mono">0 khách (Pax)</div>
+            </div>
+
+            <!-- Khách Doanh nghiệp -->
+            <div class="bg-white p-3.5 rounded-2xl border border-sky-200/80 shadow-xs bg-sky-50/20">
+              <div class="flex items-center justify-between">
+                <p class="text-[11px] font-bold uppercase text-sky-700">Doanh nghiệp (B2B)</p>
+                <div class="p-1.5 bg-sky-100 text-sky-700 rounded-lg text-xs">🏢</div>
+              </div>
+              <div class="mt-2 flex items-baseline space-x-1.5">
+                <span id="stat-corp-customers" class="text-xl font-extrabold text-sky-800">0</span>
+                <span class="text-[11px] text-sky-600 font-semibold">công ty</span>
+              </div>
+              <div id="stat-corp-revenue" class="text-[10px] text-sky-600 mt-1 font-mono">0 đ hợp đồng</div>
+            </div>
+
+            <!-- Khách lẻ -->
+            <div class="bg-white p-3.5 rounded-2xl border border-emerald-200/80 shadow-xs bg-emerald-50/20">
+              <div class="flex items-center justify-between">
+                <p class="text-[11px] font-bold uppercase text-emerald-700">Khách lẻ / Gia đình</p>
+                <div class="p-1.5 bg-emerald-100 text-emerald-700 rounded-lg text-xs">👤</div>
+              </div>
+              <div class="mt-2 flex items-baseline space-x-1.5">
+                <span id="stat-individual-customers" class="text-xl font-extrabold text-emerald-800">0</span>
+                <span class="text-[11px] text-emerald-600 font-semibold">khách</span>
+              </div>
+              <div class="text-[10px] text-emerald-600 mt-1">FIT &amp; Gia đình</div>
+            </div>
+
+            <!-- Cần chăm sóc định kỳ -->
+            <div class="bg-white p-3.5 rounded-2xl border border-rose-200/80 shadow-xs bg-rose-50/30 col-span-2 sm:col-span-1">
+              <div class="flex items-center justify-between">
+                <p class="text-[11px] font-bold uppercase text-rose-700">Cần chăm sóc</p>
+                <div class="p-1.5 bg-rose-100 text-rose-700 rounded-lg text-xs">🔔</div>
+              </div>
+              <div class="mt-2 flex items-baseline space-x-1.5">
+                <span id="stat-care-needed" class="text-xl font-extrabold text-rose-700">0</span>
+                <span class="text-[11px] text-rose-500 font-semibold">đến hạn</span>
+              </div>
+              <div id="stat-care-overdue-desc" class="text-[10px] text-rose-600 mt-1 font-semibold">Định kỳ sau tour</div>
+            </div>
+          </div>
+
+          <!-- THANH ĐIỀU HƯỚNG 3 SUB-TABS TRONG PHÂN HỆ 2 -->
+          <div class="flex border-b border-slate-200 bg-white rounded-t-2xl px-3 pt-2 gap-2 text-xs font-bold overflow-x-auto">
+            <button id="crm-tab-btn-directory" onclick="switchCrmTab('directory')" class="py-2.5 px-4 border-b-2 border-brand-600 text-brand-700 flex items-center space-x-1.5 whitespace-nowrap">
+              <span>📋 1. Danh Bạ Khách Hàng Toàn Diện</span>
+              <span id="crm-tab-count-directory" class="ml-1 px-1.5 py-0.2 bg-slate-100 text-slate-700 rounded-full text-[10px]">0</span>
+            </button>
+            <button id="crm-tab-btn-retention" onclick="switchCrmTab('retention')" class="py-2.5 px-4 border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 whitespace-nowrap">
+              <span>🗓️ 2. Kế Hoạch Chăm Sóc Khách Cũ Định Kỳ</span>
+              <span id="crm-tab-count-retention" class="ml-1 px-1.5 py-0.2 bg-rose-100 text-rose-700 rounded-full text-[10px] font-extrabold animate-pulse">0</span>
+            </button>
+            <button id="crm-tab-btn-security" onclick="switchCrmTab('security')" class="py-2.5 px-4 border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 whitespace-nowrap">
+              <span>🛡️ 3. Giám Sát Bảo Mật &amp; Bàn Giao Khách (DLP)</span>
+              <span id="crm-tab-count-security" class="ml-1 px-1.5 py-0.2 bg-amber-100 text-amber-800 rounded-full text-[10px]">Tài sản</span>
+            </button>
+          </div>
+
+          <!-- KHUNG NỘI DUNG TAB 1: DANH BẠ KHÁCH HÀNG TOÀN DIỆN -->
+          <div id="crm-tab-view-directory" class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <div class="p-4 border-b border-slate-100 bg-slate-50/50 space-y-3">
+              <!-- Hàng tìm kiếm -->
               <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div class="text-xs font-bold text-slate-700">Tra cứu nhanh khách hàng:</div>
-                <div class="relative flex-1 max-w-sm">
-                  <input type="text" id="search-input" placeholder="Tìm theo tên, SĐT hoặc mã KH..."
+                <div class="relative flex-1 max-w-md">
+                  <input type="text" id="search-input" placeholder="Tìm theo tên, SĐT, mã KH, tên công ty..."
                     class="w-full pl-8 pr-3 py-2 text-xs bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500">
                   <span class="absolute left-2.5 top-2.5 text-slate-400">🔍</span>
                 </div>
+
+                <!-- Lọc phân loại khách: Đoàn / Doanh nghiệp / Lẻ -->
+                <div class="flex items-center space-x-1.5 overflow-x-auto text-xs font-semibold">
+                  <span class="text-slate-400 text-[11px] flex-shrink-0">Phân loại:</span>
+                  <button class="crm-type-btn active px-2.5 py-1 rounded-lg border bg-brand-700 text-white border-brand-700" data-type="all">Tất cả</button>
+                  <button class="crm-type-btn px-2.5 py-1 rounded-lg border bg-white text-indigo-700 border-indigo-200 hover:bg-indigo-50" data-type="DOAN">🚩 Khách đoàn</button>
+                  <button class="crm-type-btn px-2.5 py-1 rounded-lg border bg-white text-sky-700 border-sky-200 hover:bg-sky-50" data-type="DOANH_NGHIEP">🏢 Doanh nghiệp</button>
+                  <button class="crm-type-btn px-2.5 py-1 rounded-lg border bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-50" data-type="LE">👤 Khách lẻ</button>
+                </div>
               </div>
 
+              <!-- Hàng lọc trạng thái tư vấn -->
               <div class="flex items-center space-x-2 overflow-x-auto pb-1 text-xs font-semibold">
-                <span class="text-slate-400 text-[11px]">Trạng thái:</span>
+                <span class="text-slate-400 text-[11px] flex-shrink-0">Trạng thái:</span>
                 <button class="filter-btn active px-3 py-1 rounded-lg border bg-brand-700 text-white border-brand-700" data-filter="all">Tất cả</button>
-                <button class="filter-btn px-3 py-1 rounded-lg border bg-white text-slate-600 border-slate-200 hover:bg-slate-100 inline-flex items-center space-x-1" data-filter="Mới tiếp nhận" id="filter-btn-new"><span>Mới tiếp nhận</span><span id="crm-filter-new-count" class="hidden ml-1 px-1.5 py-0.2 bg-rose-600 text-white text-[10px] font-bold rounded-full animate-pulse">0</span></button>
-                <button class="filter-btn px-3 py-1 rounded-lg border bg-white text-slate-600 border-slate-200 hover:bg-slate-100" data-filter="Đang tư vấn">Đang tư vấn</button>
-                <button class="filter-btn px-3 py-1 rounded-lg border bg-white text-slate-600 border-slate-200 hover:bg-slate-100" data-filter="Đã chốt tour">Đã chốt tour</button>
-                <button class="filter-btn px-3 py-1 rounded-lg border bg-white text-slate-600 border-slate-200 hover:bg-slate-100" data-filter="Không nghe máy / Hủy">Hủy / Hoãn</button>
+                <button class="filter-btn px-3 py-1 rounded-lg border bg-white text-slate-600 border-slate-200 hover:bg-slate-100 inline-flex items-center space-x-1" data-filter="Mới tiếp nhận" id="filter-btn-new"><span>🟡 Mới tiếp nhận</span><span id="crm-filter-new-count" class="hidden ml-1 px-1.5 py-0.2 bg-rose-600 text-white text-[10px] font-bold rounded-full animate-pulse">0</span></button>
+                <button class="filter-btn px-3 py-1 rounded-lg border bg-white text-slate-600 border-slate-200 hover:bg-slate-100" data-filter="Đang tư vấn">🔵 Đang tư vấn</button>
+                <button class="filter-btn px-3 py-1 rounded-lg border bg-white text-slate-600 border-slate-200 hover:bg-slate-100" data-filter="Đã chốt tour">🟢 Đã chốt tour</button>
+                <button class="filter-btn px-3 py-1 rounded-lg border bg-white text-slate-600 border-slate-200 hover:bg-slate-100" data-filter="Không nghe máy / Hủy">⚪ Hủy / Hoãn</button>
               </div>
             </div>
 
+            <!-- Bảng dữ liệu khách hàng có Data Masking & DLP Guard -->
             <div class="overflow-x-auto">
-              <table class="w-full text-left border-collapse">
+              <table class="w-full text-left border-collapse protected-customer-table">
                 <thead>
                   <tr class="bg-slate-100/75 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-600">
-                    <th class="py-3 px-4">Mã KH</th>
-                    <th class="py-3 px-4">Khách hàng</th>
-                    <th class="py-3 px-4">Số điện thoại</th>
-                    <th class="py-3 px-4">Nhu cầu du lịch</th>
-                    <th class="py-3 px-4">Nguồn & CTV</th>
-                    <th class="py-3 px-4">Phụ trách</th>
-                    <th class="py-3 px-4">Trạng thái</th>
-                    <th class="py-3 px-4">Ngày nhận</th>
-                    <th class="py-3 px-4 text-center">Thao tác</th>
+                    <th class="py-3 px-3">Mã KH</th>
+                    <th class="py-3 px-3">Khách hàng &amp; Đơn vị</th>
+                    <th class="py-3 px-3">Phân loại</th>
+                    <th class="py-3 px-3">Số điện thoại (Bảo mật)</th>
+                    <th class="py-3 px-3">Nhu cầu &amp; Quy mô</th>
+                    <th class="py-3 px-3">Nguồn / CTV</th>
+                    <th class="py-3 px-3">Phụ trách</th>
+                    <th class="py-3 px-3">Kế hoạch chăm sóc</th>
+                    <th class="py-3 px-3 text-center">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody id="customer-table-body" class="divide-y divide-slate-100 text-xs"></tbody>
@@ -1187,8 +1299,139 @@
             </div>
             
             <div class="px-4 py-2.5 border-t border-slate-100 bg-slate-50 flex items-center justify-between text-xs text-slate-500">
-              <div>Hiển thị <span id="displayed-count" class="font-bold text-slate-800">0</span> khách hàng</div>
-              <div class="text-[11px] text-slate-400">Kiểm soát phân quyền theo vai trò</div>
+              <div>Hiển thị <span id="displayed-count" class="font-bold text-slate-800">0</span> khách hàng (Toàn bộ là tài sản độc quyền của Công ty)</div>
+              <div class="text-[11px] text-slate-400 flex items-center space-x-1">
+                <span>🔒 Phân quyền bảo vệ: SĐT tự động che mờ</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- KHUNG NỘI DUNG TAB 2: KẾ HOẠCH CHĂM SÓC KHÁCH CŨ ĐỊNH KỲ -->
+          <div id="crm-tab-view-retention" class="hidden space-y-4">
+            <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                <div>
+                  <h3 class="font-bold text-sm text-slate-900 flex items-center space-x-2">
+                    <span>🗓️ Lịch Chăm Sóc Khách Cũ Tái Ký (Customer Retention Scheduler)</span>
+                  </h3>
+                  <p class="text-xs text-slate-500 mt-0.5">Tự động kích hoạt sau tour: D+3 (Feedback) &bull; D+15 (Tặng ảnh &amp; Voucher) &bull; D+30 (Gợi ý tour mùa mới) &bull; D+90 (Kế hoạch quý) &bull; D+180 (Nghỉ mát năm)</p>
+                </div>
+
+                <!-- Lọc lịch chăm sóc -->
+                <div class="flex items-center space-x-1.5 overflow-x-auto text-xs font-semibold">
+                  <button class="retention-filter-btn active px-3 py-1.5 rounded-lg border bg-rose-600 text-white border-rose-600" data-retention="due_today">🔔 Đến hạn hôm nay (<span id="retention-count-today">0</span>)</button>
+                  <button class="retention-filter-btn px-3 py-1.5 rounded-lg border bg-white text-slate-600 border-slate-200 hover:bg-slate-100" data-retention="overdue">⚠️ Quá hạn (<span id="retention-count-overdue">0</span>)</button>
+                  <button class="retention-filter-btn px-3 py-1.5 rounded-lg border bg-white text-slate-600 border-slate-200 hover:bg-slate-100" data-retention="upcoming">📅 Sắp đến hạn</button>
+                  <button class="retention-filter-btn px-3 py-1.5 rounded-lg border bg-white text-slate-600 border-slate-200 hover:bg-slate-100" data-retention="completed">✅ Đã chăm sóc</button>
+                  <button class="retention-filter-btn px-3 py-1.5 rounded-lg border bg-white text-slate-600 border-slate-200 hover:bg-slate-100" data-retention="all">Tất cả kế hoạch</button>
+                </div>
+              </div>
+
+              <!-- Danh sách hành động chăm sóc -->
+              <div id="retention-task-container" class="mt-4 divide-y divide-slate-100">
+                <!-- Render động -->
+              </div>
+            </div>
+          </div>
+
+          <!-- KHUNG NỘI DUNG TAB 3: GIÁM SÁT BẢO MẬT & BÀN GIAO KHÁCH HÀNG (DLP CONTROL) -->
+          <div id="crm-tab-view-security" class="hidden space-y-4">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              
+              <!-- Cột 1 & 2: Quản lý Kho Khách & Bàn Giao Hàng Loạt -->
+              <div class="lg:col-span-2 space-y-4">
+                <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+                  <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <div>
+                      <h3 class="font-bold text-sm text-slate-900 flex items-center space-x-1.5">
+                        <span>⚡ Bàn Giao Khách Hàng Hàng Loạt (Reassign Customer Pool)</span>
+                      </h3>
+                      <p class="text-xs text-slate-500">Áp dụng khi Sale nghỉ việc hoặc điều chuyển nhân sự &bull; Khách vẫn thuộc về công ty 100%</p>
+                    </div>
+                  </div>
+
+                  <div class="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Từ nhân viên Sale (Cũ):</label>
+                        <select id="reassign-from-staff" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl bg-white font-medium">
+                          <!-- Dynamic options -->
+                        </select>
+                      </div>
+                      <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Chuyển giao sang Sale (Mới tiếp nhận):</label>
+                        <select id="reassign-to-staff" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl bg-white font-medium">
+                          <!-- Dynamic options -->
+                        </select>
+                      </div>
+                    </div>
+                    <div class="flex items-center justify-between pt-2">
+                      <span id="reassign-preview-count" class="text-xs text-slate-600 font-medium">Số khách sẽ bàn giao: 0 khách</span>
+                      <button onclick="executeBulkCustomerReassignment()" class="px-4 py-2 bg-brand-700 hover:bg-brand-800 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center space-x-1">
+                        <span>🔄 Xác nhận bàn giao toàn bộ</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Bảng khách hàng có nguy cơ bị bỏ rơi / ôm khách (Grace Period > 30 ngày) -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+                  <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <div>
+                      <h3 class="font-bold text-sm text-rose-700 flex items-center space-x-1.5">
+                        <span>⚠️ Cảnh Báo Khách Quá Hạn Chăm Sóc (Nguy cơ ôm khách)</span>
+                      </h3>
+                      <p class="text-xs text-slate-500">Khách không được Sale tương tác quá 30 ngày &bull; Tự động thu hồi về Kho khách chung công ty</p>
+                    </div>
+                    <button onclick="revokeAllOverdueCustomersToPool()" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs transition-all">
+                      ⚡ Thu hồi tất cả về Kho chung
+                    </button>
+                  </div>
+
+                  <div class="overflow-x-auto mt-3">
+                    <table class="w-full text-left text-xs">
+                      <thead>
+                        <tr class="bg-rose-50 text-[11px] font-bold text-rose-800 border-b border-rose-100 uppercase">
+                          <th class="py-2.5 px-3">Mã KH</th>
+                          <th class="py-2.5 px-3">Khách hàng</th>
+                          <th class="py-2.5 px-3">Sale phụ trách</th>
+                          <th class="py-2.5 px-3">Lần chăm sóc cuối</th>
+                          <th class="py-2.5 px-3">Thời gian trễ</th>
+                          <th class="py-2.5 px-3 text-center">Thao tác</th>
+                        </tr>
+                      </thead>
+                      <tbody id="overdue-risk-table-body" class="divide-y divide-slate-100">
+                        <!-- Dynamic -->
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Cột 3: Nhật Ký Giám Sát Truy Cập SĐT (DLP Audit Trail) -->
+              <div class="space-y-4">
+                <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+                  <div class="border-b border-slate-100 pb-3">
+                    <h3 class="font-bold text-sm text-slate-900 flex items-center space-x-1.5">
+                      <span>👁️ Nhật Ký Giám Sát Xem SĐT</span>
+                    </h3>
+                    <p class="text-xs text-slate-500">Ghi lại mỗi khi Sale bấm mở khóa xem số điện thoại</p>
+                  </div>
+                  <div id="dlp-audit-log-list" class="mt-3 space-y-2 max-h-96 overflow-y-auto divide-y divide-slate-100 text-xs">
+                    <!-- Dynamic render -->
+                  </div>
+                </div>
+
+                <div class="bg-amber-50 rounded-2xl border border-amber-200 p-4 text-xs text-amber-900 space-y-2">
+                  <div class="font-bold flex items-center space-x-1 text-amber-800">
+                    <span>📜 Quy định Pháp lý &amp; Bảo vệ Khách hàng</span>
+                  </div>
+                  <p class="text-[11px] text-amber-800/90 leading-relaxed">
+                    Theo Quy chế Quản trị Doanh nghiệp HAHA ECO TRAVEL và Điều 17 Luật An toàn thông tin mạng: Mọi thông tin khách hàng, số điện thoại, hợp đồng tour là tài sản thuộc quyền sở hữu của Công ty. Bất kỳ hành vi trích xuất, sao chép hoặc chuyển giao thông tin cho đối thủ cạnh tranh sẽ chịu trách nhiệm bồi thường thiệt hại và xử lý kỷ luật ngay lập tức.
+                  </p>
+                </div>
+              </div>
+
             </div>
           </div>
         </div>
@@ -3779,8 +4022,50 @@
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1">Họ và tên khách <span class="text-rose-500">*</span></label>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Họ và tên khách / Đại diện <span class="text-rose-500">*</span></label>
             <input type="text" id="form-name" required placeholder="Nguyễn Văn A" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl font-medium">
+          </div>
+
+          <!-- Phân loại khách hàng: Đoàn / Doanh nghiệp / Khách lẻ -->
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Phân loại đối tượng <span class="text-rose-500">*</span></label>
+            <select id="form-customer-type" onchange="toggleCustomerTypeFields()" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl bg-white font-bold text-slate-800">
+              <option value="LE">👤 Khách lẻ / Cá nhân / Gia đình nhỏ</option>
+              <option value="DOAN">🚩 Khách đoàn (Nhóm bạn / CLB / Trường học / Hội nhóm)</option>
+              <option value="DOANH_NGHIEP">🏢 Khách Doanh nghiệp (B2B / Teambuilding / MICE / Gala)</option>
+            </select>
+          </div>
+
+          <!-- Phân hạng khách hàng -->
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Phân hạng khách hàng</label>
+            <select id="form-tier" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl bg-white font-semibold">
+              <option value="STANDARD">⭐ Khách tiêu chuẩn (Standard)</option>
+              <option value="VIP">🌟 Khách VIP (Tiềm năng cao)</option>
+              <option value="VVIP">💎 Khách VVIP (Chiến lược / Doanh số lớn)</option>
+            </select>
+          </div>
+
+          <!-- Khung thông tin Pháp nhân / Doanh nghiệp / Tổ chức -->
+          <div id="group-company-fields" class="hidden md:col-span-2 p-3.5 bg-blue-50/70 rounded-xl border border-blue-200 space-y-3">
+            <div class="flex items-center space-x-1.5 text-xs font-bold text-blue-900">
+              <span>🏢</span>
+              <span>Thông tin Pháp nhân / Tổ chức / Đoàn thể (Tài sản doanh nghiệp)</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label class="block text-[11px] font-bold text-slate-700 mb-1">Tên công ty / Trường học / Hội nhóm</label>
+                <input type="text" id="form-company-name" placeholder="VD: Tập đoàn V-Star, THPT..." class="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg font-medium">
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-slate-700 mb-1">Mã số thuế</label>
+                <input type="text" id="form-tax-code" placeholder="VD: 0314567890" class="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg font-mono">
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-slate-700 mb-1">Chức vụ người đại diện</label>
+                <input type="text" id="form-contact-role" placeholder="VD: Trưởng phòng HR, Chủ tịch CĐ..." class="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg font-medium">
+              </div>
+            </div>
           </div>
 
           <div class="md:col-span-2">
@@ -3854,6 +4139,17 @@
             </select>
           </div>
 
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Chu kỳ tái chăm sóc</label>
+            <select id="form-care-interval" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl bg-white font-medium">
+              <option value="30">30 ngày (Định kỳ hàng tháng)</option>
+              <option value="60">60 ngày (2 tháng / lần)</option>
+              <option value="90" selected>90 ngày (Hàng quý / Q1-Q4)</option>
+              <option value="180">180 ngày (Bán niên / 6 tháng)</option>
+              <option value="365">365 ngày (Thường niên / 1 năm)</option>
+            </select>
+          </div>
+
           <div class="md:col-span-2">
             <label class="block text-xs font-bold text-slate-700 mb-1">Ngày tiếp nhận</label>
             <input type="date" id="form-date" required class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl">
@@ -3865,6 +4161,176 @@
           <button type="submit" class="px-5 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl shadow">💾 Lưu khách hàng</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- MODAL: KẾ HOẠCH & NHẬT KÝ CHĂM SÓC KHÁCH CŨ (RETENTION LOG & SCRIPTS) -->
+  <div id="customer-care-modal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[92vh] overflow-y-auto border border-slate-200">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
+        <div>
+          <h3 id="care-modal-title" class="text-base font-bold text-slate-900 flex items-center space-x-2">
+            <span>🗓️ Chăm Sóc Khách Cũ &amp; Lên Kế Hoạch Định Kỳ</span>
+          </h3>
+          <p id="care-modal-subtitle" class="text-xs text-slate-500">Ghi nhận tương tác, gửi kịch bản tri ân &amp; đặt lịch hẹn chăm sóc lần sau</p>
+        </div>
+        <button onclick="closeCustomerCareModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg text-lg font-bold">✕</button>
+      </div>
+
+      <!-- Tóm tắt hồ sơ khách hàng -->
+      <div class="p-6 space-y-4">
+        <input type="hidden" id="care-customer-id">
+        
+        <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+          <div>
+            <div class="flex items-center space-x-2">
+              <span id="care-cust-name" class="font-extrabold text-sm text-slate-900"></span>
+              <span id="care-cust-type-badge" class="px-2 py-0.5 text-[10px] font-bold rounded-full"></span>
+              <span id="care-cust-tier-badge" class="px-2 py-0.5 text-[10px] font-bold rounded-full"></span>
+            </div>
+            <div class="text-xs text-slate-500 mt-1 flex items-center space-x-3">
+              <span>Mã: <strong id="care-cust-code" class="font-mono text-brand-800"></strong></span>
+              <span>SĐT: <strong id="care-cust-phone" class="font-mono"></strong></span>
+              <span>Sale: <strong id="care-cust-staff"></strong></span>
+            </div>
+            <div id="care-cust-company-row" class="hidden text-xs text-blue-700 font-semibold mt-1">
+              <span>Đơn vị: </span><span id="care-cust-company"></span>
+            </div>
+          </div>
+          <div class="text-right">
+            <span class="text-[10px] uppercase font-bold text-slate-400 block">Lần chăm sóc cuối</span>
+            <span id="care-cust-last-date" class="text-xs font-mono font-bold text-slate-700">Chưa có</span>
+          </div>
+        </div>
+
+        <!-- Các kịch bản mẫu nhanh (Quick Scripts) -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5">⚡ Kịch bản mẫu đề xuất (Nhấn để nạp nhanh nội dung):</label>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <button type="button" onclick="fillCareScript('D+3')" class="p-2 text-left bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl transition-all">
+              <div class="text-[11px] font-bold text-emerald-800">🌟 D+3: Khảo sát sau tour</div>
+              <div class="text-[10px] text-emerald-600 line-clamp-1">Hỏi thăm trải nghiệm &amp; xin đánh giá 5 sao</div>
+            </button>
+            <button type="button" onclick="fillCareScript('D+15')" class="p-2 text-left bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition-all">
+              <div class="text-[11px] font-bold text-amber-800">🎁 D+15: Tặng Voucher tri ân</div>
+              <div class="text-[10px] text-amber-600 line-clamp-1">Tặng link ảnh HD &amp; voucher giảm 10%</div>
+            </button>
+            <button type="button" onclick="fillCareScript('D+30')" class="p-2 text-left bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl transition-all">
+              <div class="text-[11px] font-bold text-blue-800">🌿 D+30: Gợi ý tour mùa mới</div>
+              <div class="text-[10px] text-blue-600 line-clamp-1">Đề xuất điểm đến sinh thái theo mùa</div>
+            </button>
+            <button type="button" onclick="fillCareScript('D+90')" class="p-2 text-left bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition-all">
+              <div class="text-[11px] font-bold text-indigo-800">🏢 D+90: Teambuilding Quý</div>
+              <div class="text-[10px] text-indigo-600 line-clamp-1">Khảo sát nhu cầu Gala / Teambuilding quý mới</div>
+            </button>
+            <button type="button" onclick="fillCareScript('D+180')" class="p-2 text-left bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-xl transition-all">
+              <div class="text-[11px] font-bold text-purple-800">✈️ D+180: Nghỉ mát thường niên</div>
+              <div class="text-[10px] text-purple-600 line-clamp-1">Lập kế hoạch du lịch hè / cuối năm sớm</div>
+            </button>
+            <button type="button" onclick="fillCareScript('BIRTHDAY')" class="p-2 text-left bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition-all">
+              <div class="text-[11px] font-bold text-rose-800">🎂 Chúc mừng Sinh nhật</div>
+              <div class="text-[10px] text-rose-600 line-clamp-1">Thiệp chúc mừng &amp; quà tặng sinh thái</div>
+            </button>
+          </div>
+        </div>
+
+        <form id="customer-care-form" onsubmit="saveCustomerCareRecord(event)" class="space-y-3 pt-2 border-t border-slate-100">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Kênh tương tác <span class="text-rose-500">*</span></label>
+              <select id="care-form-channel" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl bg-white font-medium">
+                <option value="Gọi điện">📞 Cuộc gọi điện thoại</option>
+                <option value="Zalo">💬 Tin nhắn Zalo / OA</option>
+                <option value="Gặp trực tiếp">🤝 Gặp trực tiếp / Cafe</option>
+                <option value="Email / Proposal">📧 Email / Kèm báo giá</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Kết quả chăm sóc <span class="text-rose-500">*</span></label>
+              <select id="care-form-result" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl bg-white font-semibold">
+                <option value="DA_CHAM_SOC">✅ Đã chăm sóc (Hài lòng)</option>
+                <option value="HEN_GOI_LAI">⏳ Khách bận, hẹn gọi lại</option>
+                <option value="QUAN_TAM_TOUR_MOI">🌿 Quan tâm tour mùa mới</option>
+                <option value="CHOT_TOUR_MOI">🤝 Đã chốt tour tái ký</option>
+                <option value="KHONG_NGHE_MAY">📵 Không nghe máy</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Hẹn chăm sóc tiếp theo <span class="text-rose-500">*</span></label>
+              <input type="date" id="care-form-next-date" required class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl font-medium">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Nội dung trao đổi &amp; Ghi chú nhu cầu mới <span class="text-rose-500">*</span></label>
+            <textarea id="care-form-notes" rows="3" required placeholder="Ghi nhận phản hồi của khách, nhu cầu du lịch sắp tới, số lượng khách dự kiến..." class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl"></textarea>
+          </div>
+
+          <div class="flex items-center justify-end space-x-2 pt-2">
+            <button type="button" onclick="closeCustomerCareModal()" class="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-semibold rounded-xl">Đóng</button>
+            <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow">💾 Lưu nhật ký chăm sóc</button>
+          </div>
+        </form>
+
+        <!-- Lịch sử các lần chăm sóc trước -->
+        <div class="pt-3 border-t border-slate-100">
+          <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2 flex items-center justify-between">
+            <span>📜 Lịch sử các lần chăm sóc trước</span>
+            <span id="care-history-count" class="text-[11px] text-slate-400 font-normal">0 lần ghi nhận</span>
+          </h4>
+          <div id="care-history-timeline" class="space-y-2 max-h-48 overflow-y-auto divide-y divide-slate-100 text-xs">
+            <!-- Dynamic timeline -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: BẢO MẬT DLP - XÁC NHẬN MỞ KHÓA SỐ ĐIỆN THOẠI KHÁCH HÀNG -->
+  <div id="customer-unmask-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-slate-200 overflow-hidden">
+      <div class="p-5 bg-gradient-to-r from-slate-900 to-rose-950 text-white flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center text-xl font-bold flex-shrink-0 border border-rose-500/30">
+          🛡️
+        </div>
+        <div>
+          <h3 class="text-sm font-bold text-rose-300 uppercase">Xác Nhận Mở Khóa Số Điện Thoại</h3>
+          <p class="text-[11px] text-slate-300">Bảo mật dữ liệu khách hàng độc quyền (DLP)</p>
+        </div>
+      </div>
+
+      <div class="p-5 space-y-4">
+        <input type="hidden" id="unmask-customer-id">
+        <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-[11px] text-amber-900 leading-relaxed">
+          <strong>⚠️ QUY ĐỊNH BẢO MẬT &amp; CHỐNG THẤT THOÁT DỮ LIỆU:</strong><br>
+          Dữ liệu khách hàng là tài sản độc quyền của <strong>HAHA ECO TRAVEL</strong>. Nghiêm cấm mọi hành vi sao chép, mang khách sang đối tác ngoài hoặc chuyển nhượng cho bên thứ ba trái phép.
+          <div class="mt-1 font-semibold text-rose-700">
+            Hành động mở khóa SĐT này sẽ được ghi nhận vào Nhật Ký Giám Sát (Audit Log) gửi trực tiếp tới Ban Giám Đốc.
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Khách hàng cần liên hệ:</label>
+          <div id="unmask-cust-display" class="font-bold text-xs text-slate-900 px-3 py-2 bg-slate-100 rounded-xl font-mono"></div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Lý do mở khóa xem SĐT <span class="text-rose-500">*</span></label>
+          <select id="unmask-reason-select" onchange="checkUnmaskReason()" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl bg-white font-medium mb-2">
+            <option value="Gọi điện tư vấn tour mới">📞 Gọi điện tư vấn chương trình tour mới</option>
+            <option value="Gửi hợp đồng &amp; lịch trình tour">📄 Gửi hợp đồng &amp; xác nhận lịch trình tour</option>
+            <option value="Chăm sóc sau tour &amp; giải quyết phản ánh">🌟 Chăm sóc sau tour &amp; giải quyết thắc mắc</option>
+            <option value="Hỗ trợ thanh toán &amp; hóa đơn">💳 Hỗ trợ thanh toán cọc / quyết toán tour</option>
+            <option value="Khác">Lý do nghiệp vụ khác...</option>
+          </select>
+          <input type="text" id="unmask-reason-custom" placeholder="Nhập lý do nghiệp vụ chi tiết..." class="hidden w-full px-3 py-2 text-xs border border-slate-300 rounded-xl">
+        </div>
+
+        <div class="pt-3 border-t border-slate-100 flex items-center justify-end space-x-2">
+          <button type="button" onclick="closeUnmaskModal()" class="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-semibold rounded-xl">Hủy</button>
+          <button type="button" onclick="confirmPhoneUnmask()" class="px-5 py-2 bg-rose-700 hover:bg-rose-800 text-white text-xs font-bold rounded-xl shadow">👁️ Xác nhận &amp; Xem SĐT</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -5999,7 +6465,7 @@
   <!-- ============================================== -->
   <!-- MODAL 1: LẬP HÓA ĐƠN ĐIỆN TỬ GTGT DU LỊCH (TT 219 & NĐ 123) -->
   <!-- ============================================== -->
-  <div id="modal-create-invoice" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+  <div id="modal-create-invoice" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center p-3 sm:p-4 overflow-y-auto">
     <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[92vh] overflow-y-auto border border-slate-100 my-auto animate-in fade-in zoom-in-95 duration-150">
       <div class="px-6 py-4 bg-gradient-to-r from-indigo-700 to-indigo-800 text-white flex items-center justify-between">
         <div class="flex items-center space-x-2.5">
@@ -6124,7 +6590,7 @@
   <!-- ============================================== -->
   <!-- MODAL 2: BẢN THỂ HIỆN HÓA ĐƠN ĐIỆN TỬ CHUẨN BỘ TÀI CHÍNH (E-INVOICE VIEWER) -->
   <!-- ============================================== -->
-  <div id="modal-view-invoice" class="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs hidden flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+  <div id="modal-view-invoice" class="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs hidden items-center justify-center p-2 sm:p-4 overflow-y-auto">
     <div class="bg-white rounded-3xl shadow-2xl max-w-3xl w-full max-h-[92vh] overflow-y-auto border border-slate-200 my-auto animate-in fade-in zoom-in-95 duration-150">
       <!-- Top Action Bar -->
       <div class="px-6 py-3.5 bg-slate-900 text-white flex items-center justify-between text-xs">
@@ -6271,7 +6737,7 @@
   <!-- ============================================== -->
   <!-- MODAL 3: LẬP CHỨNG TỪ KHẤU TRỪ THUẾ TNCN CHO CTV (TT 111 & NĐ 123) -->
   <!-- ============================================== -->
-  <div id="modal-create-tax-receipt" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+  <div id="modal-create-tax-receipt" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center p-3 sm:p-4 overflow-y-auto">
     <div class="bg-white rounded-3xl shadow-2xl max-w-xl w-full max-h-[92vh] overflow-y-auto border border-slate-100 my-auto animate-in fade-in zoom-in-95 duration-150">
       <div class="px-6 py-4 bg-gradient-to-r from-emerald-700 to-teal-800 text-white flex items-center justify-between">
         <div class="flex items-center space-x-2.5">
@@ -6344,7 +6810,7 @@
   <!-- ============================================== -->
   <!-- MODAL 4: BẢN THỂ HIỆN CHỨNG TỪ KHẤU TRỪ THUẾ TNCN (MẪU 03/TNCN) -->
   <!-- ============================================== -->
-  <div id="modal-view-tax-receipt" class="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs hidden flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+  <div id="modal-view-tax-receipt" class="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs hidden items-center justify-center p-2 sm:p-4 overflow-y-auto">
     <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[92vh] overflow-y-auto border border-slate-200 my-auto animate-in fade-in zoom-in-95 duration-150 font-sans">
       <div class="px-6 py-3.5 bg-slate-900 text-white flex items-center justify-between text-xs">
         <span class="font-extrabold uppercase tracking-wider">Chứng Từ Khấu Trừ Thuế TNCN Điện Tử</span>
@@ -6416,7 +6882,7 @@
     </div>
   </div>
 
-  <script src="app.js?v=2.0.2"></script>
+  <script src="app.js?v=2.0.3"></script>
   <script>
     if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
       window.addEventListener('load', function() {

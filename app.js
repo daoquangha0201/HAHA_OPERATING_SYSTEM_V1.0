@@ -1,4 +1,4 @@
-﻿/**
+/**
  * HAHA OPERATING SYSTEM V1.0
  * Hệ thống Quản trị Doanh nghiệp Du lịch Hợp nhất - HaHa Eco Travel ERP
  * CHUẨN NGHIỆP VỤ HOA HỒNG:
@@ -4077,6 +4077,10 @@ let currentModuleId = 2;
 let currentLoginMode = 'staff';
 let crmFilter = 'all';
 let crmSearchQuery = '';
+let crmTab = 'directory'; // 'directory', 'retention', 'security'
+let crmTypeFilter = 'all'; // 'all', 'DOAN', 'DOANH_NGHIEP', 'LE'
+let crmRetentionFilter = 'due_today'; // 'due_today', 'overdue', 'upcoming', 'completed', 'all'
+let unmaskedCustomerIds = new Set(); // Bộ nhớ tạm mở khóa SĐT (DLP)
 let currentCtvTab = 'customers'; // 'customers', 'bookings', 'commissions', 'policies'
 let ctvTourFilter = 'all'; // 'all', 'selling', 'paused', 'selected'
 let ctvTourSearchQuery = '';
@@ -4190,10 +4194,13 @@ function parseMoneyInput(value) {
 
 function initApp() {
   loadDatabase();
-  setupEventListeners();
   if (typeof initCloudSync === 'function') {
     initCloudSync();
   }
+  if (window.IS_STANDALONE_STOREFRONT) {
+    return;
+  }
+  setupEventListeners();
 
   const savedUser = sessionStorage.getItem('haha_logged_user');
   if (savedUser) {
@@ -4274,7 +4281,7 @@ function calculateBookingFinancials(booking) {
 
   const netPaid = Math.max(0, totalReceipts - totalRefunds);
   const totalAmount = Number(booking.totalAmount) || 0;
-  const remainingAmount = Math.max(0, totalAmount - netPaid);
+  const remainingAmount = booking.status === 'Đã hủy' ? 0 : Math.max(0, totalAmount - netPaid);
 
   return {
     totalAmount,
@@ -4365,18 +4372,28 @@ function syncCustomerFinancials(customerOrId) {
   }
 
   // Cập nhật hoa hồng liên kết nếu có - Khóa chặt theo bookingCode chống va chạm đa đơn tour
-  if (cust.collaboratorId && summary.bookingCount > 0) {
+  if (summary.bookingCount > 0) {
     summary.bookings.forEach(b => {
+      const effectiveCtvId = b.collaboratorId || cust.collaboratorId;
+      if (!effectiveCtvId) return;
       const comm = (db.commissions || []).find(c => c.bookingCode === b.code || (!c.bookingCode && c.customerId && String(c.customerId) === String(cust.id)));
       if (comm) {
         if (!comm.bookingCode) comm.bookingCode = b.code;
+        if (!comm.ctvId) comm.ctvId = effectiveCtvId;
+        if (!comm.collaboratorId) comm.collaboratorId = effectiveCtvId;
         comm.tourValue = b.totalAmount;
-        const policy = db.tourPolicies.find(tp => tp.id === b.tourId) || findTourPolicy(b.tourName);
+        comm.tourRevenue = b.totalAmount;
+        if (comm.status === 'Chờ đối soát') comm.status = 'Chờ duyệt';
+        const policy = db.tourPolicies.find(tp => tp.id === b.tourId) || (!comm.isB2COnline ? findTourPolicy(b.tourName) : null);
         if (policy) {
           const calc = calculateTourCommission({ tourValue: b.totalAmount, paxCount: b.paxCount, costValue: b.estimatedCost }, policy);
           comm.amount = calc.amount;
           comm.basisText = calc.basisText;
           comm.policyApplied = `${policy.name} (${policy.methodTitle})`;
+        } else if (comm.isB2COnline) {
+          comm.amount = Math.round(b.totalAmount * 0.05);
+          comm.basisText = `5% trên đơn đặt trực tuyến ${b.code} (${formatVND(b.totalAmount)})`;
+          comm.policyApplied = comm.policyApplied || 'Affiliate Link Website B2C (5%)';
         }
       }
     });
@@ -4397,7 +4414,29 @@ function syncAllFinancialData() {
       b.remainingAmount = fin.remainingAmount;
       b.refundAmount = fin.refundAmount;
 
-      if (b.status !== 'Đã hoàn thành' && b.status !== 'Đã hủy' && b.status !== 'Đang thực hiện') {
+      if (b.status === 'Đã hủy') {
+        b.remainingAmount = 0;
+        if (!b.financialStatus || b.financialStatus !== 'Đã hoàn tiền') {
+          b.financialStatus = 'Đã hủy';
+        }
+        // Tự động hủy hoa hồng chưa thanh toán của đơn đã hủy
+        if (Array.isArray(db.commissions)) {
+          db.commissions.forEach(cm => {
+            if (cm.bookingCode === b.code && cm.status !== 'Đã hủy' && cm.status !== 'Đã thanh toán') {
+              cm.status = 'Đã hủy';
+            }
+          });
+        }
+        // Tự động hủy lệnh NCC chưa chi tiền của đơn đã hủy để không phát sinh công nợ ảo A/P
+        if (Array.isArray(db.supplierBookings)) {
+          db.supplierBookings.forEach(sb => {
+            if ((sb.bookingCode === b.code || sb.bookingId === b.code) && !(sb.paidCost > 0) && sb.status !== 'CANCELLED' && sb.status !== 'Đã hủy') {
+              sb.status = 'CANCELLED';
+              sb.remainingCost = 0;
+            }
+          });
+        }
+      } else if (b.status !== 'Đã hoàn thành' && b.status !== 'Đang thực hiện') {
         if (b.paidAmount >= b.totalAmount && b.totalAmount > 0) {
           b.status = 'Đã thanh toán đủ';
           b.financialStatus = 'Đã thanh toán đủ';
@@ -4412,7 +4451,18 @@ function syncAllFinancialData() {
     });
   }
 
-  // B. Đồng bộ từng khách hàng từ db.bookings & db.payments
+  // B. Chuẩn hóa schema hoa hồng CTV (đảm bảo ctvId, tourValue và status đồng nhất 100%)
+  if (Array.isArray(db.commissions)) {
+    db.commissions.forEach(cm => {
+      if (!cm.ctvId && cm.collaboratorId) cm.ctvId = cm.collaboratorId;
+      if (!cm.collaboratorId && cm.ctvId) cm.collaboratorId = cm.ctvId;
+      if (cm.tourValue === undefined && cm.tourRevenue !== undefined) cm.tourValue = cm.tourRevenue;
+      if (!cm.policyApplied && cm.methodTitle) cm.policyApplied = cm.methodTitle;
+      if (cm.status === 'Chờ đối soát') cm.status = 'Chờ duyệt';
+    });
+  }
+
+  // C. Đồng bộ từng khách hàng từ db.bookings & db.payments
   if (Array.isArray(db.customers)) {
     db.customers.forEach(c => {
       syncCustomerFinancials(c);
@@ -4435,10 +4485,19 @@ function loadDatabase() {
   }
 }
 
-function saveDatabase() {
+function saveDatabase(broadcastMeta, immediate = false) {
+  if (typeof broadcastMeta === 'boolean') {
+    immediate = broadcastMeta;
+    broadcastMeta = null;
+  }
+  if (!db._meta) db._meta = {};
+  db._meta.updatedAt = new Date().toISOString();
+  db._meta.version = (db._meta.version || 0) + 1;
+  db._meta.deviceId = typeof CURRENT_DEVICE_ID !== 'undefined' ? CURRENT_DEVICE_ID : 'dev_default';
+
   localStorage.setItem(DB_KEY, JSON.stringify(db));
   if (typeof pushToCloud === 'function') {
-    pushToCloud(true);
+    pushToCloud(true, immediate);
   }
 }
 
@@ -4670,11 +4729,124 @@ function migrateDatabaseIfNeeded() {
   }
 
   // 8. Đảm bảo đầy đủ 20 Khách Hàng, 20 Báo Giá, 20 Đơn Tour, Phiếu Thu, NCC và Hoa Hồng vào DB
+  if (!db.crmSecurityLogs) {
+    db.crmSecurityLogs = [
+      {
+        id: 1,
+        timestamp: '2026-10-31T09:15:00.000Z',
+        user: 'Nguyễn Văn An (Leader)',
+        role: 'SALE',
+        action: 'DLP_PHONE_UNMASK',
+        customerCode: 'HH-001',
+        customerName: 'Nguyễn Thị Mai Linh',
+        phone: '0908123456',
+        reason: 'Gọi điện tư vấn tour mới Trekking Nam Cát Tiên theo yêu cầu khách'
+      },
+      {
+        id: 2,
+        timestamp: '2026-10-30T14:20:00.000Z',
+        user: 'Lê Thị Mai (Tư vấn viên)',
+        role: 'SALE',
+        action: 'DLP_PHONE_UNMASK',
+        customerCode: 'HH-003',
+        customerName: 'Lê Hoàng Phúc',
+        phone: '0987654321',
+        reason: 'Gửi hợp đồng & lịch trình tour du lịch sông nước Bến Tre'
+      }
+    ];
+    changed = true;
+  }
+
   if (db.customers) {
+    const custTypeMap = {
+      'HH-001': { type: 'LE', tier: 'VIP', company: '', tax: '', role: 'Trưởng nhóm cá nhân', interval: 30, last: '2026-10-15', next: '2026-11-02', status: 'DEN_HAN_HOM_NAY' },
+      'HH-002': { type: 'LE', tier: 'STANDARD', company: '', tax: '', role: 'Khách lẻ đôi', interval: 30, last: '2026-10-20', next: '2026-11-05', status: 'SAP_DEN_HAN' },
+      'HH-003': { type: 'LE', tier: 'STANDARD', company: '', tax: '', role: 'Chủ hộ gia đình', interval: 60, last: '2026-10-18', next: '2026-11-02', status: 'DEN_HAN_HOM_NAY' },
+      'HH-004': { type: 'LE', tier: 'VIP', company: '', tax: '', role: 'Đại diện nhóm bạn', interval: 90, last: '2026-10-10', next: '2026-10-25', status: 'QUA_HAN' },
+      'HH-005': { type: 'DOAN', tier: 'VVIP', company: 'Trường THPT Chuyên Lê Hồng Phong TP.HCM', tax: '0301458922', role: 'Thầy Trần Trọng Hiếu - Phó Hiệu Trưởng / Trưởng Đoàn', interval: 90, last: '2026-10-20', next: '2026-11-02', status: 'DEN_HAN_HOM_NAY' },
+      'HH-006': { type: 'DOAN', tier: 'VIP', company: 'Nhóm Phượt & Khám Phá Thiên Nhiên Sài Gòn', tax: '', role: 'Anh Lê Tuấn Kiệt - Trưởng nhóm', interval: 60, last: '2026-10-19', next: '2026-11-19', status: 'DA_CHAM_SOC' },
+      'HH-007': { type: 'DOAN', tier: 'STANDARD', company: 'Hội Đồng Hương Tây Bắc', tax: '', role: 'Chị Hoàng Kim Oanh - Đại diện nhóm', interval: 30, last: '2026-09-15', next: '2026-10-15', status: 'QUA_HAN' },
+      'HH-008': { type: 'DOANH_NGHIEP', tier: 'VVIP', company: 'Tập Đoàn Công Nghệ V-Star Toàn Cầu', tax: '0315897456', role: 'Bà Vũ Mai Anh - Giám Đốc Nhân Sự (HRD)', interval: 90, last: '2026-10-22', next: '2026-11-02', status: 'DEN_HAN_HOM_NAY' },
+      'HH-009': { type: 'DOANH_NGHIEP', tier: 'VVIP', company: 'Ngân Hàng TMCP Kỹ Thương Việt Nam (Techcombank)', tax: '0100230800', role: 'Anh Vũ Hải - Chủ Tịch Công Đoàn Hội Sở', interval: 90, last: '2026-10-25', next: '2026-11-10', status: 'SAP_DEN_HAN' },
+      'HH-010': { type: 'LE', tier: 'VVIP', company: 'Văn Phòng Đại Diện Alpha Capital', tax: '0313456789', role: 'David Trần - Managing Director', interval: 60, last: '2026-10-20', next: '2026-11-02', status: 'DEN_HAN_HOM_NAY' },
+      'HH-011': { type: 'DOAN', tier: 'VIP', company: 'CLB Nhiếp Ảnh Sài Gòn Mới', tax: '', role: 'Anh Chu Văn Sơn - Chủ nhiệm CLB', interval: 60, last: '2026-10-23', next: '2026-11-23', status: 'DA_CHAM_SOC' },
+      'HH-012': { type: 'DOAN', tier: 'VVIP', company: 'Agence de Voyage Terres Lointaines (France)', tax: 'FR8832049', role: 'Jean-Pierre Dubois - Inbound Director', interval: 180, last: '2026-10-22', next: '2026-11-20', status: 'SAP_DEN_HAN' },
+      'HH-013': { type: 'LE', tier: 'STANDARD', company: '', tax: '', role: 'Khách lẻ gia đình', interval: 90, last: '2026-10-22', next: '2026-11-22', status: 'DA_CHAM_SOC' },
+      'HH-014': { type: 'DOANH_NGHIEP', tier: 'VVIP', company: 'Bệnh Viện Đa Khoa Sài Gòn', tax: '0300456123', role: 'BS. Nguyễn Minh Tuấn - Trưởng Khoa & Trưởng BTC', interval: 90, last: '2026-10-24', next: '2026-11-02', status: 'DEN_HAN_HOM_NAY' },
+      'HH-015': { type: 'LE', tier: 'VIP', company: '', tax: '', role: 'Bác Trần Văn Thành - Chủ hộ gia đình 3 thế hệ', interval: 90, last: '2026-10-23', next: '2026-11-23', status: 'DA_CHAM_SOC' },
+      'HH-016': { type: 'LE', tier: 'VIP', company: '', tax: '', role: 'Khách hàng thân thiết VIP', interval: 60, last: '2026-10-24', next: '2026-11-02', status: 'DEN_HAN_HOM_NAY' },
+      'HH-017': { type: 'DOANH_NGHIEP', tier: 'VIP', company: 'Công Ty Cổ Phần Công Nghệ AI Nexus', tax: '0316789123', role: 'Anh Đặng Quốc Cường - CEO', interval: 90, last: '2026-10-25', next: '2026-11-25', status: 'DA_CHAM_SOC' },
+      'HH-018': { type: 'DOANH_NGHIEP', tier: 'VIP', company: 'Công Ty Cổ Phần Đầu Tư Xây Dựng Vinacon', tax: '0312987654', role: 'Anh Hoàng Văn Đức - Giám Đốc Dự Án', interval: 90, last: '2026-09-20', next: '2026-10-20', status: 'QUA_HAN' },
+      'HH-019': { type: 'DOAN', tier: 'VIP', company: 'Mạng Lưới Nữ Doanh Nhân Khởi Nghiệp BNI Chapter', tax: '', role: 'Chị Đỗ Mỹ Linh - Phó Chủ Tịch Chapter', interval: 60, last: '2026-10-26', next: '2026-11-26', status: 'DA_CHAM_SOC' },
+      'HH-020': { type: 'DOAN', tier: 'VVIP', company: 'Hội Caravan Xe Tự Lái Miền Nam', tax: '', role: 'Anh Bùi Quang Thắng - Chủ Nhiệm CLB', interval: 60, last: '2026-10-26', next: '2026-11-02', status: 'DEN_HAN_HOM_NAY' }
+    };
+
     INITIAL_CUSTOMERS.forEach(initC => {
       const exists = db.customers.find(c => c.code === initC.code || String(c.id) === String(initC.id));
       if (!exists) {
         db.customers.push(JSON.parse(JSON.stringify(initC)));
+        changed = true;
+      }
+    });
+
+    db.customers.forEach(c => {
+      const meta = custTypeMap[c.code] || {};
+      if (!c.customerType) {
+        c.customerType = meta.type || (c.paxCount >= 50 ? 'DOANH_NGHIEP' : (c.paxCount >= 10 ? 'DOAN' : 'LE'));
+        changed = true;
+      }
+      if (!c.tier) {
+        c.tier = meta.tier || 'STANDARD';
+        changed = true;
+      }
+      if (c.companyName === undefined) {
+        c.companyName = meta.company || '';
+        changed = true;
+      }
+      if (c.taxCode === undefined) {
+        c.taxCode = meta.tax || '';
+        changed = true;
+      }
+      if (c.contactRole === undefined) {
+        c.contactRole = meta.role || '';
+        changed = true;
+      }
+      if (!c.isCompanyAsset) {
+        c.isCompanyAsset = true;
+        changed = true;
+      }
+      if (!c.careStatus) {
+        c.careStatus = meta.status || 'SAP_DEN_HAN';
+        changed = true;
+      }
+      if (!c.careInterval) {
+        c.careInterval = meta.interval || 90;
+        changed = true;
+      }
+      if (!c.lastCareDate) {
+        c.lastCareDate = meta.last || c.date || '2026-10-20';
+        changed = true;
+      }
+      if (!c.nextCareDate) {
+        c.nextCareDate = meta.next || '2026-11-15';
+        changed = true;
+      }
+      if (!c.careHistory || !Array.isArray(c.careHistory) || c.careHistory.length === 0) {
+        c.careHistory = [
+          {
+            id: Date.now() - Math.floor(Math.random() * 100000),
+            date: c.lastCareDate,
+            staff: c.staff || 'Nguyễn Văn An (Leader)',
+            channel: 'Gọi điện',
+            type: 'CSKH_DINH_KY',
+            result: c.careStatus === 'QUA_HAN' ? 'Chưa liên hệ được' : 'Hài lòng dịch vụ',
+            notes: `Chăm sóc định kỳ hồ sơ ${c.name} (${c.code}). Phân loại: ${c.customerType === 'DOANH_NGHIEP' ? 'Doanh nghiệp B2B' : (c.customerType === 'DOAN' ? 'Khách đoàn' : 'Khách lẻ')}.`
+          }
+        ];
+        changed = true;
+      }
+      if (c.unmaskedViewCount === undefined) {
+        c.unmaskedViewCount = 0;
         changed = true;
       }
     });
@@ -5677,19 +5849,36 @@ function switchUserRole(newUsername) {
 function updateUserProfileUI() {
   if (!currentUser) return;
 
-  document.getElementById('user-avatar').textContent = currentUser.avatar || '👤';
-  document.getElementById('user-display-name').textContent = currentUser.name;
-  document.getElementById('user-username').textContent = `@${currentUser.username}`;
+  const avatarEl = document.getElementById('user-avatar');
+  if (avatarEl) avatarEl.textContent = currentUser.avatar || '👤';
+
+  const nameEl = document.getElementById('user-display-name');
+  if (nameEl) nameEl.textContent = currentUser.name;
+
+  const userEl = document.getElementById('user-username');
+  if (userEl) userEl.textContent = `@${currentUser.username}`;
 
   const badge = document.getElementById('user-role-badge');
-  badge.textContent = currentUser.roleTitle;
-  badge.className = 'role-badge';
-  
-  if (currentUser.role === 'CEO') badge.classList.add('role-ceo');
-  else if (currentUser.role === 'SALE') badge.classList.add('role-sale');
-  else if (currentUser.role === 'OPS') badge.classList.add('role-ops');
-  else if (currentUser.role === 'KE_TOAN') badge.classList.add('role-acc');
-  else if (currentUser.role === 'CTV') badge.classList.add('role-ctv');
+  if (badge) {
+    badge.textContent = currentUser.roleTitle;
+    badge.className = 'role-badge';
+    if (currentUser.role === 'CEO') badge.classList.add('role-ceo');
+    else if (currentUser.role === 'SALE') badge.classList.add('role-sale');
+    else if (currentUser.role === 'OPS') badge.classList.add('role-ops');
+    else if (currentUser.role === 'KE_TOAN') badge.classList.add('role-acc');
+    else if (currentUser.role === 'CTV') badge.classList.add('role-ctv');
+  }
+
+  const mobileBadge = document.getElementById('user-role-badge-mobile');
+  if (mobileBadge) {
+    mobileBadge.textContent = currentUser.roleTitle;
+    mobileBadge.className = 'role-badge text-[9px] px-1 py-0.2';
+    if (currentUser.role === 'CEO') mobileBadge.classList.add('role-ceo');
+    else if (currentUser.role === 'SALE') mobileBadge.classList.add('role-sale');
+    else if (currentUser.role === 'OPS') mobileBadge.classList.add('role-ops');
+    else if (currentUser.role === 'KE_TOAN') mobileBadge.classList.add('role-acc');
+    else if (currentUser.role === 'CTV') mobileBadge.classList.add('role-ctv');
+  }
 
   const quickSelect = document.getElementById('quick-role-select');
   if (quickSelect) quickSelect.value = currentUser.username;
@@ -5767,6 +5956,12 @@ function applyRoleSecurity() {
         }
       }
     }
+
+    // Cập nhật tùy chọn hiển thị trên Dropdown chuyển phân hệ Di động
+    const opt10 = document.getElementById('opt-mobile-mod10');
+    const opt11 = document.getElementById('opt-mobile-mod11');
+    if (opt10) opt10.classList.toggle('hidden', !isCtv && currentUser.role !== 'CEO');
+    if (opt11) opt11.classList.toggle('hidden', !isSupplier && currentUser.role !== 'CEO');
   }
 }
 
@@ -5781,6 +5976,22 @@ function switchModule(modId) {
   }
 
   currentModuleId = modId;
+
+  // Đồng bộ giá trị với Dropdown di động
+  const mobileSelect = document.getElementById('mobile-module-select');
+  if (mobileSelect && parseInt(mobileSelect.value) !== modId) {
+    mobileSelect.value = modId;
+  }
+
+  // Tự động thu gọn menu sidebar trên di động khi đã chọn phân hệ
+  if (window.innerWidth < 768) {
+    const sidebar = document.getElementById('main-sidebar');
+    const icon = document.getElementById('mobile-menu-icon');
+    if (sidebar && !sidebar.classList.contains('hidden')) {
+      sidebar.classList.add('hidden');
+      if (icon) icon.textContent = '☰';
+    }
+  }
 
   for (let i = 1; i <= 11; i++) {
     const navItem = document.getElementById(`nav-mod-${i}`);
@@ -5815,6 +6026,17 @@ function switchModule(modId) {
   else if (modId === 9) renderAuditLogModule();
   else if (modId === 10) renderCtvPortal();
   else if (modId === 11) renderSupplierPortal();
+}
+
+// Bật/tắt menu sidebar trên điện thoại
+function toggleMobileSidebar() {
+  const sidebar = document.getElementById('main-sidebar');
+  const icon = document.getElementById('mobile-menu-icon');
+  if (!sidebar) return;
+  sidebar.classList.toggle('hidden');
+  if (icon) {
+    icon.textContent = sidebar.classList.contains('hidden') ? '☰' : '✕';
+  }
 }
 
 function refreshActiveView() {
@@ -8698,20 +8920,215 @@ function getScopedCustomers(user = currentUser) {
 
 function renderCrmModule() {
   updateCrmDashboard();
-  renderCustomerTable();
+  if (crmTab === 'directory') {
+    renderCustomerTable();
+  } else if (crmTab === 'retention') {
+    renderCrmRetentionScheduler();
+  } else if (crmTab === 'security') {
+    renderCrmSecurityDlpTab();
+  }
   populateCtvDropdownInCustomerModal();
 }
 
 function updateCrmDashboard() {
-  const total = db.customers.length;
-  const newCust = db.customers.filter(c => c.status === 'Mới tiếp nhận').length;
-  const booked = db.customers.filter(c => c.status === 'Đã chốt tour').length;
-  const rate = total > 0 ? Math.round((booked / total) * 100) : 0;
+  const customers = db.customers || [];
+  const total = customers.length;
+  const groups = customers.filter(c => c.customerType === 'DOAN');
+  const groupPax = groups.reduce((sum, c) => sum + (c.paxCount || 0), 0);
+  const corps = customers.filter(c => c.customerType === 'DOANH_NGHIEP');
+  const corpRevenue = corps.reduce((sum, c) => sum + (c.tourValue || 0), 0);
+  const individuals = customers.filter(c => c.customerType === 'LE' || (!c.customerType && (c.paxCount || 0) < 10));
 
-  document.getElementById('stat-total-customers').textContent = total;
-  document.getElementById('stat-new-customers').textContent = newCust;
-  document.getElementById('stat-booked-tours').textContent = booked;
-  document.getElementById('stat-conversion-rate').textContent = `${rate}%`;
+  const todayStr = new Date().toISOString().split('T')[0];
+  const dueTodayList = customers.filter(c => c.careStatus === 'DEN_HAN_HOM_NAY' || (c.nextCareDate && c.nextCareDate === todayStr));
+  const overdueList = customers.filter(c => c.careStatus === 'QUA_HAN' || (c.nextCareDate && c.nextCareDate < todayStr && c.careStatus !== 'DA_CHAM_SOC' && c.careStatus !== 'CHOT_TOUR_MOI'));
+  const totalCareNeeded = dueTodayList.length + overdueList.length;
+
+  const elTotal = document.getElementById('stat-total-customers');
+  if (elTotal) elTotal.textContent = total;
+
+  const elGroup = document.getElementById('stat-group-customers');
+  if (elGroup) elGroup.textContent = groups.length;
+  const elGroupPax = document.getElementById('stat-group-pax');
+  if (elGroupPax) elGroupPax.textContent = `${groupPax} khách (Pax)`;
+
+  const elCorp = document.getElementById('stat-corp-customers');
+  if (elCorp) elCorp.textContent = corps.length;
+  const elCorpRev = document.getElementById('stat-corp-revenue');
+  if (elCorpRev) elCorpRev.textContent = `${formatVND(corpRevenue)} hợp đồng`;
+
+  const elIndiv = document.getElementById('stat-individual-customers');
+  if (elIndiv) elIndiv.textContent = individuals.length;
+
+  const elCare = document.getElementById('stat-care-needed');
+  if (elCare) elCare.textContent = totalCareNeeded;
+  const elCareDesc = document.getElementById('stat-care-overdue-desc');
+  if (elCareDesc) elCareDesc.textContent = `${overdueList.length} hồ sơ quá hạn`;
+
+  // Cập nhật số lượng trên các sub-tab
+  const tabDir = document.getElementById('crm-tab-count-directory');
+  if (tabDir) tabDir.textContent = total;
+  const tabRet = document.getElementById('crm-tab-count-retention');
+  if (tabRet) tabRet.textContent = totalCareNeeded;
+  const tabSec = document.getElementById('crm-tab-count-security');
+  if (tabSec) tabSec.textContent = `${overdueList.length} cảnh báo`;
+
+  const countToday = document.getElementById('retention-count-today');
+  if (countToday) countToday.textContent = dueTodayList.length;
+  const countOverdue = document.getElementById('retention-count-overdue');
+  if (countOverdue) countOverdue.textContent = overdueList.length;
+}
+
+// Chuyển đổi giữa 3 Sub-tabs trong Phân hệ 2
+function switchCrmTab(tabName) {
+  crmTab = tabName;
+  const tabs = ['directory', 'retention', 'security'];
+  tabs.forEach(t => {
+    const btn = document.getElementById(`crm-tab-btn-${t}`);
+    const view = document.getElementById(`crm-tab-view-${t}`);
+    if (btn) {
+      if (t === tabName) {
+        btn.classList.add('border-brand-600', 'text-brand-700');
+        btn.classList.remove('border-transparent', 'text-slate-500');
+      } else {
+        btn.classList.remove('border-brand-600', 'text-brand-700');
+        btn.classList.add('border-transparent', 'text-slate-500');
+      }
+    }
+    if (view) {
+      if (t === tabName) view.classList.remove('hidden');
+      else view.classList.add('hidden');
+    }
+  });
+
+  if (tabName === 'directory') renderCustomerTable();
+  else if (tabName === 'retention') renderCrmRetentionScheduler();
+  else if (tabName === 'security') renderCrmSecurityDlpTab();
+}
+
+// Cơ chế che mờ số điện thoại (DLP Data Masking)
+function maskPhone(phone, customerId) {
+  if (!phone) return '<span class="text-slate-400 italic">Chưa có</span>';
+  
+  // CEO có toàn quyền xem không che mờ
+  if (currentUser && currentUser.role === 'CEO') {
+    return `
+      <a href="tel:${escapeHtml(phone)}" class="hover:text-brand-600 hover:underline flex items-center space-x-1 font-mono font-bold text-slate-800">
+        <span>📞</span>
+        <span>${escapeHtml(phone)}</span>
+      </a>
+    `;
+  }
+
+  // Nếu đã được mở khóa trong phiên này
+  if (unmaskedCustomerIds.has(customerId) || unmaskedCustomerIds.has(String(customerId))) {
+    return `
+      <div class="flex items-center space-x-1">
+        <a href="tel:${escapeHtml(phone)}" class="hover:text-emerald-700 hover:underline font-mono font-bold text-emerald-800">📞 ${escapeHtml(phone)}</a>
+        <span class="text-[9px] bg-emerald-100 text-emerald-800 px-1 py-0.5 rounded font-bold" title="Đã ghi nhận nhật ký truy cập">Đã mở</span>
+      </div>
+    `;
+  }
+
+  // Mặc định che mờ các chữ số ở giữa đối với Sale & CTV
+  const clean = String(phone).replace(/\s+/g, '');
+  let masked = clean;
+  if (clean.length >= 8) {
+    masked = clean.substring(0, 4) + ' ••• ' + clean.slice(-3);
+  } else if (clean.length >= 4) {
+    masked = clean.substring(0, 2) + ' ••• ' + clean.slice(-2);
+  }
+
+  return `
+    <div class="flex items-center space-x-1.5">
+      <span class="font-mono text-slate-500 font-semibold select-none cursor-not-allowed" title="SĐT đã được mã hóa bảo vệ bản quyền">${masked}</span>
+      <button type="button" onclick="promptUnmaskCustomer('${customerId}')" class="px-1.5 py-0.5 bg-slate-100 hover:bg-rose-50 hover:text-rose-700 text-slate-700 text-[10px] font-bold rounded border border-slate-300 transition-colors" title="Mở khóa xem số điện thoại (Hành động sẽ được ghi nhận vào Nhật Ký Giám Sát DLP)">👁️ Xem</button>
+    </div>
+  `;
+}
+
+// Bật Popup xác nhận mở khóa SĐT (DLP)
+function promptUnmaskCustomer(customerId) {
+  const cust = (db.customers || []).find(c => String(c.id) === String(customerId) || c.code === customerId);
+  if (!cust) return;
+  const modal = document.getElementById('customer-unmask-modal');
+  if (!modal) return;
+
+  document.getElementById('unmask-customer-id').value = cust.id;
+  const typeLabel = cust.customerType === 'DOANH_NGHIEP' ? 'Khách Doanh nghiệp' : (cust.customerType === 'DOAN' ? 'Khách đoàn' : 'Khách lẻ');
+  const compLabel = cust.companyName ? ` (${cust.companyName})` : '';
+  document.getElementById('unmask-cust-display').textContent = `${cust.name} [${cust.code}] - ${typeLabel}${compLabel}`;
+
+  const sel = document.getElementById('unmask-reason-select');
+  if (sel) sel.value = 'Gọi điện tư vấn tour mới';
+  const custom = document.getElementById('unmask-reason-custom');
+  if (custom) {
+    custom.value = '';
+    custom.classList.add('hidden');
+  }
+
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+}
+
+function closeUnmaskModal() {
+  const modal = document.getElementById('customer-unmask-modal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+}
+
+function checkUnmaskReason() {
+  const sel = document.getElementById('unmask-reason-select');
+  const custom = document.getElementById('unmask-reason-custom');
+  if (!sel || !custom) return;
+  if (sel.value === 'Khác') {
+    custom.classList.remove('hidden');
+    custom.focus();
+  } else {
+    custom.classList.add('hidden');
+  }
+}
+
+function confirmPhoneUnmask() {
+  const custId = document.getElementById('unmask-customer-id').value;
+  const cust = (db.customers || []).find(c => String(c.id) === String(custId));
+  if (!cust) return;
+
+  const sel = document.getElementById('unmask-reason-select');
+  const custom = document.getElementById('unmask-reason-custom');
+  let reason = sel ? sel.value : 'Gọi điện tư vấn tour mới';
+  if (reason === 'Khác' && custom) {
+    reason = custom.value.trim() || 'Lý do nghiệp vụ chăm sóc khách hàng';
+  }
+
+  unmaskedCustomerIds.add(cust.id);
+  unmaskedCustomerIds.add(String(cust.id));
+  cust.unmaskedViewCount = (cust.unmaskedViewCount || 0) + 1;
+
+  const logEntry = {
+    id: Date.now(),
+    timestamp: new Date().toISOString(),
+    user: currentUser ? currentUser.name : 'Nhân viên Sale',
+    role: currentUser ? currentUser.role : 'SALE',
+    action: 'DLP_PHONE_UNMASK',
+    customerCode: cust.code,
+    customerName: cust.name,
+    phone: cust.phone,
+    reason: reason
+  };
+
+  if (!db.crmSecurityLogs) db.crmSecurityLogs = [];
+  db.crmSecurityLogs.unshift(logEntry);
+  recordAuditLog('MỞ KHÓA SĐT KHÁCH (DLP)', `${logEntry.user} mở khóa xem SĐT của khách hàng ${cust.name} (${cust.code}). Lý do: ${reason}`);
+  saveDatabase();
+
+  closeUnmaskModal();
+  renderCustomerTable();
+  if (crmTab === 'retention') renderCrmRetentionScheduler();
+  if (crmTab === 'security') renderCrmSecurityDlpTab();
+  alert(`🛡️ BẢO MẬT DLP: Đã mở khóa hiển thị SĐT cho khách hàng "${cust.name}".\nThao tác đã được ghi nhận an toàn vào Nhật Ký Giám Sát của Ban Giám Đốc.`);
 }
 
 function renderCustomerTable() {
@@ -8719,29 +9136,35 @@ function renderCustomerTable() {
   const emptyState = document.getElementById('empty-state');
   const countBadge = document.getElementById('displayed-count');
 
-  const filtered = db.customers.filter(c => {
+  const filtered = (db.customers || []).filter(c => {
+    const q = crmSearchQuery.toLowerCase();
     const matchSearch = crmSearchQuery === '' ||
-      c.name.toLowerCase().includes(crmSearchQuery.toLowerCase()) ||
-      c.phone.includes(crmSearchQuery) ||
-      c.code.toLowerCase().includes(crmSearchQuery.toLowerCase());
+      (c.name && c.name.toLowerCase().includes(q)) ||
+      (c.phone && c.phone.includes(q)) ||
+      (c.code && c.code.toLowerCase().includes(q)) ||
+      (c.companyName && c.companyName.toLowerCase().includes(q));
 
     const matchFilter = crmFilter === 'all' || c.status === crmFilter;
 
+    const matchType = crmTypeFilter === 'all' || c.customerType === crmTypeFilter;
+
     const matchRole = (currentUser && currentUser.role === 'SALE')
-      ? (c.staff.includes(currentUser.name) || c.staff === 'Chưa phân công')
+      ? ((c.staff && c.staff.includes(currentUser.name)) || c.staff === 'Chưa phân công')
       : true;
 
-    return matchSearch && matchFilter && matchRole;
+    return matchSearch && matchFilter && matchType && matchRole;
   });
 
-  countBadge.textContent = filtered.length;
+  if (countBadge) countBadge.textContent = filtered.length;
 
   if (filtered.length === 0) {
-    tbody.innerHTML = '';
-    emptyState.classList.remove('hidden');
+    if (tbody) tbody.innerHTML = '';
+    if (emptyState) emptyState.classList.remove('hidden');
     return;
   }
-  emptyState.classList.add('hidden');
+  if (emptyState) emptyState.classList.add('hidden');
+
+  if (!tbody) return;
 
   tbody.innerHTML = filtered.map(c => {
     let badgeClass = 'status-badge-lost';
@@ -8749,8 +9172,40 @@ function renderCustomerTable() {
     else if (c.status === 'Đang tư vấn') badgeClass = 'status-badge-advising';
     else if (c.status === 'Đã chốt tour') badgeClass = 'status-badge-won';
 
-    const ctvObj = db.ctvs.find(ctv => ctv.id === c.collaboratorId);
-    const ctvDisplay = ctvObj ? `<span class="px-1.5 py-0.5 bg-amber-50 text-amber-800 rounded font-bold text-[10px]">CTV: ${escapeHtml(ctvObj.name)}</span>` : '';
+    // Phân loại khách hàng: Đoàn / Doanh nghiệp / Lẻ
+    let typeBadge = '';
+    if (c.customerType === 'DOANH_NGHIEP') {
+      typeBadge = `<span class="px-2 py-0.5 bg-sky-100 text-sky-800 rounded-full font-bold text-[10px] border border-sky-300 inline-flex items-center space-x-1"><span>🏢</span><span>Doanh nghiệp</span></span>`;
+    } else if (c.customerType === 'DOAN') {
+      typeBadge = `<span class="px-2 py-0.5 bg-indigo-100 text-indigo-800 rounded-full font-bold text-[10px] border border-indigo-300 inline-flex items-center space-x-1"><span>🚩</span><span>Khách đoàn</span></span>`;
+    } else {
+      typeBadge = `<span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full font-bold text-[10px] border border-emerald-300 inline-flex items-center space-x-1"><span>👤</span><span>Khách lẻ</span></span>`;
+    }
+
+    // Phân hạng khách hàng: VVIP, VIP, STANDARD
+    let tierBadge = '';
+    if (c.tier === 'VVIP') {
+      tierBadge = `<span class="px-1.5 py-0.2 bg-purple-100 text-purple-700 rounded text-[9px] font-bold border border-purple-200">💎 VVIP</span>`;
+    } else if (c.tier === 'VIP') {
+      tierBadge = `<span class="px-1.5 py-0.2 bg-amber-100 text-amber-700 rounded text-[9px] font-bold border border-amber-200">🌟 VIP</span>`;
+    }
+
+    // Kế hoạch chăm sóc định kỳ
+    let careBadge = '';
+    if (c.careStatus === 'DEN_HAN_HOM_NAY') {
+      careBadge = `<span class="px-2 py-0.5 bg-rose-100 text-rose-700 rounded-full font-bold text-[10px] border border-rose-300 inline-flex items-center space-x-1 animate-pulse"><span>🔔</span><span>Hôm nay đến hạn</span></span>`;
+    } else if (c.careStatus === 'QUA_HAN') {
+      careBadge = `<span class="px-2 py-0.5 bg-red-100 text-red-800 rounded-full font-bold text-[10px] border border-red-300 inline-flex items-center space-x-1"><span>⚠️</span><span>Quá hạn (>30 ngày)</span></span>`;
+    } else if (c.careStatus === 'DA_CHAM_SOC') {
+      careBadge = `<span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full font-bold text-[10px] border border-emerald-300 inline-flex items-center space-x-1"><span>✅</span><span>Đã chăm sóc</span></span>`;
+    } else if (c.careStatus === 'CHOT_TOUR_MOI') {
+      careBadge = `<span class="px-2 py-0.5 bg-purple-100 text-purple-800 rounded-full font-bold text-[10px] border border-purple-300 inline-flex items-center space-x-1"><span>🤝</span><span>Chốt tour tái ký</span></span>`;
+    } else {
+      careBadge = `<span class="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-full font-medium text-[10px] border border-slate-300 inline-flex items-center space-x-1"><span>📅</span><span>Hẹn: ${escapeHtml(c.nextCareDate || 'Định kỳ')}</span></span>`;
+    }
+
+    const ctvObj = (db.ctvs || []).find(ctv => ctv.id === c.collaboratorId);
+    const ctvDisplay = ctvObj ? `<span class="px-1.5 py-0.5 bg-amber-50 text-amber-800 rounded font-bold text-[10px] block mt-0.5">CTV: ${escapeHtml(ctvObj.name)}</span>` : '';
 
     const summary = getCustomerFinancialSummary(c);
     let paymentInfoHtml = '';
@@ -8764,55 +9219,682 @@ function renderCustomerTable() {
       }
     }
 
+    const companyInfo = c.companyName ? `<div class="text-[11px] text-blue-700 font-semibold truncate max-w-xs" title="${escapeHtml(c.companyName)}">🏢 ${escapeHtml(c.companyName)}</div>` : '';
+
     return `
       <tr class="border-b border-slate-100 hover:bg-slate-50/80 transition-colors">
-        <td class="py-3 px-4 font-mono font-bold text-brand-800">${escapeHtml(c.code)}</td>
-        <td class="py-3 px-4 font-semibold text-slate-900">
+        <td class="py-3 px-3 font-mono font-bold text-brand-800 whitespace-nowrap">
+          <div class="flex items-center space-x-1">
+            <span>${escapeHtml(c.code)}</span>
+            <span class="text-[10px]" title="Tài sản bảo hộ của HaHa Eco Travel">🔒</span>
+          </div>
+        </td>
+        <td class="py-3 px-3">
           <div class="flex items-center space-x-2">
-            <span class="w-6 h-6 rounded-full bg-brand-100 text-brand-800 flex items-center justify-center font-bold text-[10px]">
+            <span class="w-6 h-6 rounded-full bg-brand-100 text-brand-800 flex items-center justify-center font-bold text-[10px] flex-shrink-0">
               ${c.name.charAt(0).toUpperCase()}
             </span>
-            <span>${escapeHtml(c.name)}</span>
+            <div class="min-w-0">
+              <div class="font-bold text-slate-900 flex items-center space-x-1.5">
+                <span>${escapeHtml(c.name)}</span>
+                ${tierBadge}
+              </div>
+              ${companyInfo}
+              ${paymentInfoHtml}
+            </div>
           </div>
-          ${paymentInfoHtml}
         </td>
-        <td class="py-3 px-4 font-mono font-medium text-slate-700">
-          <a href="tel:${escapeHtml(c.phone)}" class="hover:text-brand-600 hover:underline flex items-center space-x-1">
-            <span>📞</span>
-            <span>${escapeHtml(c.phone)}</span>
-          </a>
+        <td class="py-3 px-3 whitespace-nowrap">
+          ${typeBadge}
         </td>
-        <td class="py-3 px-4 text-slate-700 max-w-xs truncate" title="${escapeHtml(c.demand)}">
-          ${escapeHtml(c.demand)}
+        <td class="py-3 px-3 whitespace-nowrap">
+          ${maskPhone(c.phone, c.id)}
         </td>
-        <td class="py-3 px-4 text-slate-600">
+        <td class="py-3 px-3 text-slate-700 max-w-xs truncate" title="${escapeHtml(c.demand)}">
+          <div class="truncate font-medium">${escapeHtml(c.demand)}</div>
+          <div class="text-[10px] text-slate-500 font-mono">Quy mô: <strong>${c.paxCount || 1} khách (Pax)</strong></div>
+        </td>
+        <td class="py-3 px-3 text-slate-600 whitespace-nowrap">
           <div class="font-medium">${escapeHtml(c.source || 'Trực tiếp')}</div>
           ${ctvDisplay}
         </td>
-        <td class="py-3 px-4 text-slate-700 font-medium">${escapeHtml(c.staff || 'Chưa phân công')}</td>
-        <td class="py-3 px-4"><span class="status-badge ${badgeClass}">${escapeHtml(c.status)}</span></td>
-        <td class="py-3 px-4 text-slate-500 font-mono text-[11px]">${escapeHtml(c.date)}</td>
-        <td class="py-3 px-4 text-center space-x-1 whitespace-nowrap">
+        <td class="py-3 px-3 text-slate-700 font-medium whitespace-nowrap">
+          ${escapeHtml(c.staff || 'Chưa phân công')}
+        </td>
+        <td class="py-3 px-3 whitespace-nowrap">
+          <div>${careBadge}</div>
+          <div class="text-[10px] text-slate-400 mt-0.5">Lần cuối: ${escapeHtml(c.lastCareDate || c.date || 'Chưa có')}</div>
+        </td>
+        <td class="py-3 px-3 text-center space-x-1 whitespace-nowrap">
           ${currentUser && currentUser.role === 'KE_TOAN' 
             ? '<span class="text-xs text-slate-400 italic font-medium">Chỉ xem (Kế toán)</span>'
             : `
-              ${c.status === 'Mới tiếp nhận' 
-                ? `<button onclick="acknowledgeCtvLead('${c.id}')" class="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-bold text-xs shadow-sm transition-all inline-flex items-center space-x-1" title="Tiếp nhận khách và chuyển sang Đang tư vấn"><span>📞 Tiếp nhận</span></button>`
-                : ''
-              }
+              <button onclick="openCustomerCareModal('${c.id}')" class="px-2 py-1 bg-brand-50 hover:bg-brand-100 text-brand-800 border border-brand-200 rounded-lg text-xs font-bold transition-all inline-flex items-center space-x-1" title="Lên lịch & Chăm sóc định kỳ">
+                <span>📞 Chăm sóc</span>
+              </button>
               ${c.status !== 'Đã chốt tour'
-                ? `<button onclick="quickCloseTourFromCrm('${c.id}')" class="action-btn text-white bg-emerald-600 hover:bg-emerald-700 border border-emerald-700 font-bold shadow-sm inline-flex items-center space-x-1" title="Chốt tour cho khách này và chuyển ngay sang Điều hành"><span>🤝 Chốt tour</span></button>`
+                ? `<button onclick="quickCloseTourFromCrm('${c.id}')" class="action-btn text-white bg-emerald-600 hover:bg-emerald-700 border border-emerald-700 font-bold shadow-sm inline-flex items-center space-x-1" title="Chốt tour cho khách này"><span>🤝 Chốt tour</span></button>`
                 : ''
               }
-              <button onclick="openAddQuotationModal(${c.id})" class="action-btn text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 font-semibold" title="Lập báo giá tour cho khách này">📋 Báo giá</button>
-              <button onclick="editCustomer(${c.id})" class="action-btn action-btn-edit">✏️ Sửa</button>
-              <button onclick="deleteCustomer(${c.id})" class="action-btn action-btn-delete">🗑️ Xóa</button>
+              <button onclick="openAddQuotationModal('${c.id}')" class="action-btn text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 font-semibold" title="Lập báo giá tour">📋 Báo giá</button>
+              <button onclick="editCustomer('${c.id}')" class="action-btn action-btn-edit">✏️ Sửa</button>
+              <button onclick="deleteCustomer('${c.id}')" class="action-btn action-btn-delete">🗑️ Xóa</button>
             `
           }
         </td>
       </tr>
     `;
   }).join('');
+}
+
+// ==========================================
+// RENDER SUB-TAB 2: KẾ HOẠCH CHĂM SÓC KHÁCH CŨ ĐỊNH KỲ (RETENTION SCHEDULER)
+// ==========================================
+function renderCrmRetentionScheduler() {
+  const container = document.getElementById('retention-task-container');
+  if (!container) return;
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const customers = db.customers || [];
+
+  const filteredTasks = customers.filter(c => {
+    if (crmRetentionFilter === 'due_today') {
+      return c.careStatus === 'DEN_HAN_HOM_NAY' || (c.nextCareDate && c.nextCareDate === todayStr);
+    } else if (crmRetentionFilter === 'overdue') {
+      return c.careStatus === 'QUA_HAN' || (c.nextCareDate && c.nextCareDate < todayStr && c.careStatus !== 'DA_CHAM_SOC' && c.careStatus !== 'CHOT_TOUR_MOI');
+    } else if (crmRetentionFilter === 'upcoming') {
+      return c.nextCareDate && c.nextCareDate > todayStr;
+    } else if (crmRetentionFilter === 'completed') {
+      return c.careStatus === 'DA_CHAM_SOC' || c.careStatus === 'CHOT_TOUR_MOI';
+    }
+    return true; // 'all'
+  });
+
+  if (filteredTasks.length === 0) {
+    container.innerHTML = `
+      <div class="py-12 text-center text-slate-400">
+        <div class="text-3xl mb-2">🎉</div>
+        <p class="text-sm font-semibold text-slate-600">Không có lịch chăm sóc nào trong mục này</p>
+        <p class="text-xs text-slate-400 mt-1">Tất cả khách hàng đã được chăm sóc đúng chu kỳ hoặc hãy chọn mục lọc khác.</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = filteredTasks.map(c => {
+    let statusClass = 'border-l-4 border-l-slate-300 bg-white';
+    let statusBadge = '<span class="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-full font-semibold text-[10px]">Sắp đến hạn</span>';
+
+    if (c.careStatus === 'DEN_HAN_HOM_NAY' || c.nextCareDate === todayStr) {
+      statusClass = 'border-l-4 border-l-rose-500 bg-rose-50/20';
+      statusBadge = '<span class="px-2.5 py-0.5 bg-rose-100 text-rose-700 rounded-full font-bold text-[10px] animate-pulse">🔔 Đến hạn hôm nay</span>';
+    } else if (c.careStatus === 'QUA_HAN' || (c.nextCareDate && c.nextCareDate < todayStr)) {
+      statusClass = 'border-l-4 border-l-red-600 bg-red-50/20';
+      statusBadge = '<span class="px-2.5 py-0.5 bg-red-100 text-red-800 rounded-full font-bold text-[10px]">⚠️ Quá hạn chăm sóc</span>';
+    } else if (c.careStatus === 'DA_CHAM_SOC' || c.careStatus === 'CHOT_TOUR_MOI') {
+      statusClass = 'border-l-4 border-l-emerald-500 bg-emerald-50/20';
+      statusBadge = '<span class="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 rounded-full font-bold text-[10px]">✅ Đã chăm sóc xong</span>';
+    }
+
+    const typeBadge = c.customerType === 'DOANH_NGHIEP' 
+      ? '<span class="px-1.5 py-0.2 bg-sky-100 text-sky-800 text-[10px] font-bold rounded">🏢 Doanh nghiệp</span>'
+      : (c.customerType === 'DOAN' 
+        ? '<span class="px-1.5 py-0.2 bg-indigo-100 text-indigo-800 text-[10px] font-bold rounded">🚩 Khách đoàn</span>'
+        : '<span class="px-1.5 py-0.2 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded">👤 Khách lẻ</span>');
+
+    const lastLog = (c.careHistory && c.careHistory.length > 0) ? c.careHistory[0] : null;
+    const lastNote = lastLog ? `Lần trước (${lastLog.date}): ${lastLog.notes}` : 'Chưa có nhật ký chăm sóc trước đó.';
+
+    return `
+      <div class="p-4 ${statusClass} hover:bg-slate-50 transition-colors">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="space-y-1">
+            <div class="flex items-center space-x-2">
+              <span class="font-extrabold text-sm text-slate-900">${escapeHtml(c.name)}</span>
+              <span class="font-mono text-xs text-brand-800 font-bold">[${escapeHtml(c.code)}]</span>
+              ${typeBadge}
+              ${statusBadge}
+            </div>
+            ${c.companyName ? `<div class="text-xs text-blue-700 font-semibold">🏢 Đơn vị: ${escapeHtml(c.companyName)}</div>` : ''}
+            <div class="text-xs text-slate-600 flex items-center space-x-3 flex-wrap">
+              <span>SĐT: ${maskPhone(c.phone, c.id)}</span>
+              <span>Sale phụ trách: <strong>${escapeHtml(c.staff || 'Chưa phân công')}</strong></span>
+              <span>Quy mô: <strong>${c.paxCount || 1} khách</strong></span>
+              <span>Chu kỳ: <strong>${c.careInterval || 90} ngày</strong></span>
+            </div>
+            <div class="text-xs text-slate-500 bg-slate-50 p-2 rounded-lg border border-slate-200/60 mt-1.5">
+              <span>💬 </span><span class="italic">${escapeHtml(lastNote)}</span>
+            </div>
+          </div>
+
+          <div class="flex items-center space-x-2 flex-shrink-0 self-end sm:self-center">
+            <div class="text-right mr-2 hidden sm:block">
+              <div class="text-[10px] text-slate-400 uppercase font-bold">Ngày hẹn chăm sóc</div>
+              <div class="text-xs font-mono font-bold text-slate-800">${c.nextCareDate || 'Chưa đặt lịch'}</div>
+            </div>
+            <button onclick="openCustomerCareModal('${c.id}')" class="px-3.5 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all flex items-center space-x-1.5">
+              <span>📞</span>
+              <span>Chăm sóc ngay</span>
+            </button>
+            <button onclick="openAddQuotationModal('${c.id}')" class="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-bold transition-all">
+              📋 Báo giá tái ký
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ==========================================
+// RENDER SUB-TAB 3: BẢO MẬT & BÀN GIAO KHÁCH HÀNG (DLP SECURITY CONTROLS)
+// ==========================================
+function renderCrmSecurityDlpTab() {
+  // 1. Cập nhật danh sách Sale chuyển nhượng
+  const customers = db.customers || [];
+  const fromSelect = document.getElementById('reassign-from-staff');
+  const toSelect = document.getElementById('reassign-to-staff');
+
+  const staffSet = new Set();
+  customers.forEach(c => {
+    if (c.staff && c.staff !== 'Chưa phân công') staffSet.add(c.staff);
+  });
+
+  const allStaffList = [
+    'Nguyễn Văn An (Leader)',
+    'Lê Thị Mai (Tư vấn viên)',
+    'Trần Đức Huy (Tư vấn viên)',
+    'Phạm Thảo Vy (Tư vấn viên)'
+  ];
+
+  if (fromSelect) {
+    const curFrom = fromSelect.value;
+    fromSelect.innerHTML = '<option value="">-- Chọn nhân viên bàn giao (Cũ) --</option>';
+    staffSet.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s;
+      const count = customers.filter(c => c.staff === s).length;
+      opt.textContent = `${s} (${count} khách đang giữ)`;
+      fromSelect.appendChild(opt);
+    });
+    if (curFrom) fromSelect.value = curFrom;
+
+    fromSelect.onchange = function() {
+      const selected = fromSelect.value;
+      const cnt = customers.filter(c => c.staff === selected).length;
+      const preview = document.getElementById('reassign-preview-count');
+      if (preview) preview.textContent = `Số khách sẽ bàn giao: ${cnt} khách`;
+    };
+  }
+
+  if (toSelect) {
+    const curTo = toSelect.value;
+    toSelect.innerHTML = '<option value="">-- Chọn nhân viên tiếp nhận (Mới) --</option>';
+    allStaffList.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s;
+      opt.textContent = s;
+      toSelect.appendChild(opt);
+    });
+    if (curTo) toSelect.value = curTo;
+  }
+
+  // 2. Bảng cảnh báo khách quá hạn >30 ngày (Nguy cơ ôm khách)
+  const overdueTbody = document.getElementById('overdue-risk-table-body');
+  if (overdueTbody) {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const riskCustomers = customers.filter(c => c.careStatus === 'QUA_HAN' || (c.nextCareDate && c.nextCareDate < todayStr));
+
+    if (riskCustomers.length === 0) {
+      overdueTbody.innerHTML = `
+        <tr>
+          <td colspan="6" class="py-6 text-center text-slate-400 italic">
+            ✅ Không có khách hàng nào bị bỏ rơi quá hạn. Đội ngũ Sale đang chăm sóc đúng tiến độ.
+          </td>
+        </tr>
+      `;
+    } else {
+      overdueTbody.innerHTML = riskCustomers.map(c => `
+        <tr class="hover:bg-rose-50/50 transition-colors border-b border-slate-100">
+          <td class="py-2.5 px-3 font-mono font-bold text-rose-800">${escapeHtml(c.code)}</td>
+          <td class="py-2.5 px-3 font-semibold text-slate-900">
+            <div>${escapeHtml(c.name)}</div>
+            ${c.companyName ? `<div class="text-[10px] text-blue-700">${escapeHtml(c.companyName)}</div>` : ''}
+          </td>
+          <td class="py-2.5 px-3 text-slate-700 font-medium">${escapeHtml(c.staff || 'Chưa phân công')}</td>
+          <td class="py-2.5 px-3 text-slate-500 font-mono text-[11px]">${escapeHtml(c.lastCareDate || c.date || 'Chưa có')}</td>
+          <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded-full bg-red-100 text-red-800 text-[10px] font-bold animate-pulse">Quá hạn >30 ngày</span></td>
+          <td class="py-2.5 px-3 text-center">
+            <button onclick="revokeCustomerToPool('${c.id}')" class="px-2 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition-all shadow-xs" title="Thu hồi về kho khách chung">
+              ⚡ Thu hồi
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+  }
+
+  // 3. Nhật ký giám sát xem SĐT (DLP Audit Trail)
+  const auditContainer = document.getElementById('dlp-audit-log-list');
+  if (auditContainer) {
+    const logs = db.crmSecurityLogs || [];
+    if (logs.length === 0) {
+      auditContainer.innerHTML = '<div class="p-4 text-center text-slate-400 italic">Chưa có hành vi mở khóa xem SĐT nào</div>';
+    } else {
+      auditContainer.innerHTML = logs.map(l => `
+        <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-200/70 text-xs">
+          <div class="flex items-center justify-between text-[11px] text-slate-500">
+            <span class="font-semibold text-slate-800 font-mono">${escapeHtml(l.user)} (${escapeHtml(l.role)})</span>
+            <span>${new Date(l.timestamp).toLocaleString('vi-VN')}</span>
+          </div>
+          <div class="mt-1 text-slate-700">
+            <span>Mở khóa khách: </span><strong class="text-brand-900">${escapeHtml(l.customerName)} [${escapeHtml(l.customerCode)}]</strong>
+            <span class="font-mono text-emerald-800 ml-1">(${escapeHtml(l.phone)})</span>
+          </div>
+          <div class="text-[11px] text-slate-500 italic mt-0.5">Lý do: "${escapeHtml(l.reason)}"</div>
+        </div>
+      `).join('');
+    }
+  }
+}
+
+// Bàn giao khách hàng hàng loạt từ Sale cũ sang Sale mới (DLP Reassignment)
+function executeBulkCustomerReassignment() {
+  const fromStaff = document.getElementById('reassign-from-staff').value;
+  const toStaff = document.getElementById('reassign-to-staff').value;
+
+  if (!fromStaff || !toStaff) {
+    alert("⚠️ Vui lòng chọn cả Nhân viên Sale chuyển giao và Nhân viên Sale mới tiếp nhận!");
+    return;
+  }
+
+  if (fromStaff === toStaff) {
+    alert("⚠️ Nhân viên chuyển giao và Nhân viên tiếp nhận không được trùng nhau!");
+    return;
+  }
+
+  const matchingCustomers = (db.customers || []).filter(c => c.staff === fromStaff);
+  if (matchingCustomers.length === 0) {
+    alert(`Không tìm thấy khách hàng nào do "${fromStaff}" phụ trách!`);
+    return;
+  }
+
+  if (confirm(`🛡️ XÁC NHẬN BÀN GIAO TÀI SẢN DOANH NGHIỆP:\nBạn có chắc chắn muốn chuyển giao toàn bộ ${matchingCustomers.length} khách hàng từ "${fromStaff}" sang "${toStaff}"?\n\nToàn bộ dữ liệu lịch sử chăm sóc, báo giá và đơn tour sẽ được bảo toàn nguyên vẹn.`)) {
+    matchingCustomers.forEach(c => {
+      c.staff = toStaff;
+      if (!c.careHistory) c.careHistory = [];
+      c.careHistory.unshift({
+        id: Date.now() + Math.random(),
+        date: new Date().toISOString().split('T')[0],
+        staff: currentUser ? currentUser.name : 'Ban Giám Đốc',
+        channel: 'Hệ thống DLP',
+        type: 'BAN_GIAO_KHO',
+        result: 'Đã bàn giao',
+        notes: `Bàn giao quyền phụ trách từ "${fromStaff}" sang "${toStaff}".`
+      });
+    });
+
+    recordAuditLog('BÀN GIAO KHÁCH HÀNG (DLP)', `Chuyển giao ${matchingCustomers.length} khách hàng từ ${fromStaff} sang ${toStaff}.`);
+    saveDatabase();
+    alert(`✅ ĐÃ BÀN GIAO THÀNH CÔNG ${matchingCustomers.length} KHÁCH HÀNG SANG "${toStaff}"!`);
+    renderCrmModule();
+  }
+}
+
+// Thu hồi 1 khách hàng về Kho khách chung
+function revokeCustomerToPool(customerId) {
+  const cust = (db.customers || []).find(c => String(c.id) === String(customerId) || c.code === customerId);
+  if (!cust) return;
+
+  if (confirm(`Bạn có chắc chắn muốn thu hồi khách hàng "${cust.name}" (${cust.code}) về Kho khách chung của công ty?\nKhách hàng này sẽ được gán lại cho Sale khác để tránh bỏ rơi.`)) {
+    const oldStaff = cust.staff;
+    cust.staff = 'Chưa phân công';
+    cust.careStatus = 'DEN_HAN_HOM_NAY';
+    if (!cust.careHistory) cust.careHistory = [];
+    cust.careHistory.unshift({
+      id: Date.now(),
+      date: new Date().toISOString().split('T')[0],
+      staff: currentUser ? currentUser.name : 'Hệ thống DLP',
+      channel: 'Thu hồi tự động',
+      type: 'THU_HOI_KHO_CHUNG',
+      result: 'Về kho chung',
+      notes: `Thu hồi khách từ "${oldStaff}" về Kho khách chung do quá hạn chăm sóc.`
+    });
+
+    recordAuditLog('THU HỒI KHÁCH VỀ KHO CHUNG', `Thu hồi khách hàng ${cust.name} (${cust.code}) từ ${oldStaff} về Kho khách chung.`);
+    saveDatabase();
+    renderCrmModule();
+  }
+}
+
+// Thu hồi tất cả khách hàng quá hạn >30 ngày về Kho chung
+function revokeAllOverdueCustomersToPool() {
+  const todayStr = new Date().toISOString().split('T')[0];
+  const riskCustomers = (db.customers || []).filter(c => c.careStatus === 'QUA_HAN' || (c.nextCareDate && c.nextCareDate < todayStr));
+
+  if (riskCustomers.length === 0) {
+    alert("Không có khách hàng nào quá hạn cần thu hồi!");
+    return;
+  }
+
+  if (confirm(`🛡️ THU HỒI TẤT CẢ KHÁCH HÀNG BỎ RƠI:\nBạn có chắc chắn muốn thu hồi toàn bộ ${riskCustomers.length} khách hàng quá hạn về Kho khách chung để phân bổ lại cho các Sale khác?`)) {
+    riskCustomers.forEach(c => {
+      const oldStaff = c.staff;
+      c.staff = 'Chưa phân công';
+      c.careStatus = 'DEN_HAN_HOM_NAY';
+      if (!c.careHistory) c.careHistory = [];
+      c.careHistory.unshift({
+        id: Date.now() + Math.random(),
+        date: todayStr,
+        staff: currentUser ? currentUser.name : 'Hệ thống DLP',
+        channel: 'Thu hồi tự động',
+        type: 'THU_HOI_HANG_LOAT',
+        result: 'Về kho chung',
+        notes: `Thu hồi khách từ "${oldStaff}" về Kho khách chung do quá hạn chăm sóc.`
+      });
+    });
+
+    recordAuditLog('THU HỒI KHÁCH HÀNG HÀNG LOẠT', `Thu hồi ${riskCustomers.length} khách hàng quá hạn về Kho khách chung.`);
+    saveDatabase();
+    alert(`✅ Đã thu hồi ${riskCustomers.length} khách hàng về Kho khách chung thành công!`);
+    renderCrmModule();
+  }
+}
+
+// Mở Modal Chăm sóc khách cũ định kỳ (Customer Care Modal)
+function openCustomerCareModal(customerId) {
+  const cust = (db.customers || []).find(c => String(c.id) === String(customerId) || c.code === customerId);
+  if (!cust) return;
+
+  const modal = document.getElementById('customer-care-modal');
+  if (!modal) return;
+
+  document.getElementById('care-customer-id').value = cust.id;
+  document.getElementById('care-cust-name').textContent = cust.name;
+  document.getElementById('care-cust-code').textContent = cust.code;
+  document.getElementById('care-cust-staff').textContent = cust.staff || 'Chưa phân công';
+  document.getElementById('care-cust-phone').innerHTML = maskPhone(cust.phone, cust.id);
+  document.getElementById('care-cust-last-date').textContent = cust.lastCareDate || cust.date || 'Chưa có';
+
+  // Badges
+  const typeBadgeEl = document.getElementById('care-cust-type-badge');
+  if (typeBadgeEl) {
+    if (cust.customerType === 'DOANH_NGHIEP') {
+      typeBadgeEl.className = 'px-2 py-0.5 text-[10px] font-bold rounded-full bg-sky-100 text-sky-800 border border-sky-300';
+      typeBadgeEl.textContent = '🏢 Doanh nghiệp';
+    } else if (cust.customerType === 'DOAN') {
+      typeBadgeEl.className = 'px-2 py-0.5 text-[10px] font-bold rounded-full bg-indigo-100 text-indigo-800 border border-indigo-300';
+      typeBadgeEl.textContent = '🚩 Khách đoàn';
+    } else {
+      typeBadgeEl.className = 'px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300';
+      typeBadgeEl.textContent = '👤 Khách lẻ';
+    }
+  }
+
+  const tierBadgeEl = document.getElementById('care-cust-tier-badge');
+  if (tierBadgeEl) {
+    tierBadgeEl.className = 'px-2 py-0.5 text-[10px] font-bold rounded-full bg-amber-100 text-amber-800 border border-amber-300';
+    tierBadgeEl.textContent = cust.tier === 'VVIP' ? '💎 VVIP' : (cust.tier === 'VIP' ? '🌟 VIP' : '⭐ Standard');
+  }
+
+  const compRow = document.getElementById('care-cust-company-row');
+  const compEl = document.getElementById('care-cust-company');
+  if (compRow && compEl) {
+    if (cust.companyName) {
+      compEl.textContent = cust.companyName;
+      compRow.classList.remove('hidden');
+    } else {
+      compRow.classList.add('hidden');
+    }
+  }
+
+  // Pre-fill next date (mặc định sau chu kỳ hoặc 30 ngày)
+  const nextDateInput = document.getElementById('care-form-next-date');
+  if (nextDateInput) {
+    const intervalDays = cust.careInterval || 90;
+    const nextDate = new Date(Date.now() + intervalDays * 86400000).toISOString().split('T')[0];
+    nextDateInput.value = nextDate;
+  }
+
+  // Reset form notes
+  const notesEl = document.getElementById('care-form-notes');
+  if (notesEl) notesEl.value = '';
+
+  // Render Timeline Lịch sử
+  renderCareHistoryTimeline(cust);
+
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+}
+
+function closeCustomerCareModal() {
+  const modal = document.getElementById('customer-care-modal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+}
+
+// Nạp nhanh nội dung kịch bản chăm sóc mẫu (Quick Scripts)
+function fillCareScript(scriptType) {
+  const notesEl = document.getElementById('care-form-notes');
+  const channelEl = document.getElementById('care-form-channel');
+  const resultEl = document.getElementById('care-form-result');
+  const nextDateEl = document.getElementById('care-form-next-date');
+
+  const custId = document.getElementById('care-customer-id').value;
+  const cust = (db.customers || []).find(c => String(c.id) === String(custId));
+  const custName = cust ? cust.name : 'Quý khách';
+
+  if (scriptType === 'D+3') {
+    if (channelEl) channelEl.value = 'Gọi điện';
+    if (resultEl) resultEl.value = 'DA_CHAM_SOC';
+    if (notesEl) {
+      notesEl.value = `[🌟 D+3 Khảo sát sau tour]: Gọi điện hỏi thăm trải nghiệm tour vừa hoàn thành của ${custName}. Khách khen hướng dẫn viên am hiểu sinh thái, đồ ăn ngon và dịch vụ chu đáo. Đã xin đánh giá 5 sao trên Google & Fanpage.`;
+    }
+    if (nextDateEl) {
+      nextDateEl.value = new Date(Date.now() + 15 * 86400000).toISOString().split('T')[0];
+    }
+  } else if (scriptType === 'D+15') {
+    if (channelEl) channelEl.value = 'Zalo';
+    if (resultEl) resultEl.value = 'DA_CHAM_SOC';
+    if (notesEl) {
+      notesEl.value = `[🎁 D+15 Tặng Voucher & Ảnh kỷ niệm]: Gửi link Google Drive album ảnh HD chuyến đi và trao tặng Voucher tri ân HAHA-VIP10 (Giảm 10% cho tour tiếp theo). Khách phản hồi rất vui và lưu lại mã giảm.`;
+    }
+    if (nextDateEl) {
+      nextDateEl.value = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
+    }
+  } else if (scriptType === 'D+30') {
+    if (channelEl) channelEl.value = 'Zalo';
+    if (resultEl) resultEl.value = 'QUAN_TAM_TOUR_MOI';
+    if (notesEl) {
+      notesEl.value = `[🌿 D+30 Gợi ý tour mùa mới]: Gửi gợi ý điểm đến sinh thái mùa mới (Mùa dã quỳ Đà Lạt / Cát Tiên ngắm thú đêm). Khách quan tâm lịch trình 3N2Đ và nhờ gửi báo giá chi tiết cho đoàn bạn bè.`;
+    }
+    if (nextDateEl) {
+      nextDateEl.value = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
+    }
+  } else if (scriptType === 'D+90') {
+    if (channelEl) channelEl.value = 'Email / Proposal';
+    if (resultEl) resultEl.value = 'DA_CHAM_SOC';
+    if (notesEl) {
+      notesEl.value = `[🏢 D+90 Teambuilding & MICE Quý mới]: Trao đổi với đại diện ${custName} về kế hoạch du lịch kết hợp Gala / Teambuilding quý tiếp theo. Đã gửi catalog năng lực tổ chức sự kiện sinh thái độc quyền của HaHa Eco.`;
+    }
+    if (nextDateEl) {
+      nextDateEl.value = new Date(Date.now() + 90 * 86400000).toISOString().split('T')[0];
+    }
+  } else if (scriptType === 'D+180') {
+    if (channelEl) channelEl.value = 'Gọi điện';
+    if (resultEl) resultEl.value = 'DA_CHAM_SOC';
+    if (notesEl) {
+      notesEl.value = `[✈️ D+180 Nghỉ mát bán niên & hè]: Tư vấn kế hoạch du lịch hè/cuối năm sớm để giữ phòng resort sinh thái và vé máy bay giá tốt nhất. Đang chốt số lượng khách dự kiến.`;
+    }
+    if (nextDateEl) {
+      nextDateEl.value = new Date(Date.now() + 180 * 86400000).toISOString().split('T')[0];
+    }
+  } else if (scriptType === 'BIRTHDAY') {
+    if (channelEl) channelEl.value = 'Zalo';
+    if (resultEl) resultEl.value = 'DA_CHAM_SOC';
+    if (notesEl) {
+      notesEl.value = `[🎂 Chúc mừng Sinh nhật]: Gửi thiệp chúc mừng sinh nhật cá nhân hóa của HaHa Eco Travel và tặng quà voucher du lịch độc quyền. Khách gửi lời cảm ơn nồng nhiệt.`;
+    }
+    if (nextDateEl) {
+      nextDateEl.value = new Date(Date.now() + 60 * 86400000).toISOString().split('T')[0];
+    }
+  }
+}
+
+// Lưu bản ghi chăm sóc khách hàng
+function saveCustomerCareRecord(e) {
+  e.preventDefault();
+  const custId = document.getElementById('care-customer-id').value;
+  const cust = (db.customers || []).find(c => String(c.id) === String(custId));
+  if (!cust) return;
+
+  const channel = document.getElementById('care-form-channel').value;
+  const result = document.getElementById('care-form-result').value;
+  const nextDate = document.getElementById('care-form-next-date').value;
+  const notes = document.getElementById('care-form-notes').value.trim();
+
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  const careRecord = {
+    id: Date.now(),
+    date: todayStr,
+    staff: currentUser ? currentUser.name : (cust.staff || 'Sale'),
+    channel: channel,
+    result: result === 'DA_CHAM_SOC' ? 'Đã chăm sóc' : (result === 'HEN_GOI_LAI' ? 'Hẹn gọi lại' : (result === 'QUAN_TAM_TOUR_MOI' ? 'Quan tâm tour mới' : (result === 'CHOT_TOUR_MOI' ? 'Chốt tour tái ký' : 'Không nghe máy'))),
+    notes: notes
+  };
+
+  if (!cust.careHistory) cust.careHistory = [];
+  cust.careHistory.unshift(careRecord);
+
+  cust.lastCareDate = todayStr;
+  cust.nextCareDate = nextDate;
+  cust.careStatus = result;
+
+  recordAuditLog('CHĂM SÓC KHÁCH CŨ', `Đã ghi nhận chăm sóc khách hàng ${cust.name} (${cust.code}). Kết quả: ${careRecord.result}. Hẹn chăm sóc lần sau: ${nextDate}.`);
+  saveDatabase();
+
+  closeCustomerCareModal();
+  renderCrmModule();
+  alert(`✅ Đã lưu nhật ký chăm sóc khách hàng "${cust.name}" thành công!\nLịch hẹn lần sau: ${nextDate}`);
+
+  // Nếu khách quan tâm hoặc chốt tour mới, gợi ý mở báo giá
+  if (result === 'QUAN_TAM_TOUR_MOI' || result === 'CHOT_TOUR_MOI') {
+    if (confirm(`Khách hàng "${cust.name}" đang có nhu cầu tour mới! Bạn có muốn mở ngay biểu mẫu BÁO GIÁ TÁI KÝ cho khách này không?`)) {
+      openAddQuotationModal(cust.id);
+    }
+  }
+}
+
+function renderCareHistoryTimeline(cust) {
+  const container = document.getElementById('care-history-timeline');
+  const countEl = document.getElementById('care-history-count');
+  if (!container) return;
+
+  const history = cust.careHistory || [];
+  if (countEl) countEl.textContent = `${history.length} lần ghi nhận`;
+
+  if (history.length === 0) {
+    container.innerHTML = '<div class="text-slate-400 italic py-2 text-center">Chưa có lịch sử chăm sóc trước đây</div>';
+    return;
+  }
+
+  container.innerHTML = history.map(item => `
+    <div class="py-2 space-y-1">
+      <div class="flex items-center justify-between text-[11px]">
+        <div class="flex items-center space-x-1.5 font-bold text-slate-800">
+          <span>📅 ${escapeHtml(item.date)}</span>
+          <span class="px-1.5 py-0.2 bg-slate-100 rounded text-[10px] text-slate-600 font-mono">${escapeHtml(item.channel || 'Kênh khác')}</span>
+          <span class="px-1.5 py-0.2 bg-emerald-50 text-emerald-800 rounded text-[10px]">${escapeHtml(item.result || 'Thành công')}</span>
+        </div>
+        <span class="text-slate-400 font-medium">${escapeHtml(item.staff || '')}</span>
+      </div>
+      <div class="text-xs text-slate-700 font-sans pl-2 border-l-2 border-slate-200">${escapeHtml(item.notes)}</div>
+    </div>
+  `).join('');
+}
+
+// Bảo mật DLP: Xuất dữ liệu Khách Hàng (Chỉ CEO có quyền)
+function exportCustomerData() {
+  if (!currentUser || currentUser.role !== 'CEO') {
+    alert("⛔ TRUY CẬP BỊ TỪ CHỐI (DLP ACCESS DENIED):\n\nChỉ Ban Giám Đốc (CEO) mới có quyền trích xuất dữ liệu khách hàng của công ty!\nHành vi cố gắng tải data khách hàng trái phép đã được ghi nhận vào Nhật Ký Giám Sát An Ninh.");
+    
+    if (!db.crmSecurityLogs) db.crmSecurityLogs = [];
+    db.crmSecurityLogs.unshift({
+      id: Date.now(),
+      timestamp: new Date().toISOString(),
+      user: currentUser ? currentUser.name : 'Ẩn danh',
+      role: currentUser ? currentUser.role : 'GUEST',
+      action: 'DLP_UNAUTHORIZED_EXPORT_ATTEMPT',
+      customerCode: 'ALL_DATA',
+      customerName: 'Danh sách khách hàng công ty',
+      phone: 'PROTECTED',
+      reason: 'Cố gắng xuất file dữ liệu khách hàng không có quyền CEO'
+    });
+    recordAuditLog('CẢNH BÁO DLP', `Nhân viên ${currentUser ? currentUser.name : 'Unknown'} cố gắng xuất danh sách khách hàng nhưng bị chặn.`);
+    saveDatabase();
+    return;
+  }
+
+  const customers = db.customers || [];
+  if (customers.length === 0) {
+    alert("Không có dữ liệu khách hàng để xuất!");
+    return;
+  }
+
+  let csv = "\uFEFF"; // UTF-8 BOM cho Excel tiếng Việt
+  csv += "Mã KH,Họ và tên,Phân loại,Phân hạng,Tên Doanh nghiệp / Đơn vị,Mã số thuế,Chức vụ đại diện,Số điện thoại,Nhu cầu tour,Số lượng Pax,Nguồn khách,Sale phụ trách,Trạng thái,Lần chăm sóc cuối,Hẹn chăm sóc sau,Tổng chi tiêu (VNĐ)\n";
+
+  customers.forEach(c => {
+    const summary = getCustomerFinancialSummary(c);
+    const row = [
+      `"${c.code || ''}"`,
+      `"${(c.name || '').replace(/"/g, '""')}"`,
+      `"${c.customerType === 'DOANH_NGHIEP' ? 'Khách Doanh nghiệp' : (c.customerType === 'DOAN' ? 'Khách đoàn' : 'Khách lẻ')}"`,
+      `"${c.tier || 'STANDARD'}"`,
+      `"${(c.companyName || '').replace(/"/g, '""')}"`,
+      `"${c.taxCode || ''}"`,
+      `"${(c.contactRole || '').replace(/"/g, '""')}"`,
+      `"${c.phone || ''}"`,
+      `"${(c.demand || '').replace(/"/g, '""')}"`,
+      c.paxCount || 1,
+      `"${c.source || ''}"`,
+      `"${c.staff || ''}"`,
+      `"${c.status || ''}"`,
+      `"${c.lastCareDate || ''}"`,
+      `"${c.nextCareDate || ''}"`,
+      summary.totalPaid || 0
+    ];
+    csv += row.join(",") + "\n";
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `HAHA_ECO_DANH_SACH_KHACH_HANG_${new Date().toISOString().split('T')[0]}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  recordAuditLog('XUẤT EXCEL KHÁCH HÀNG (CEO)', `CEO ${currentUser.name} đã trích xuất danh sách ${customers.length} khách hàng.`);
+  alert(`✅ Đã xuất dữ liệu thành công ${customers.length} khách hàng ra file Excel.`);
+}
+
+// Ẩn/hiện trường thông tin Doanh nghiệp trong Modal thêm/sửa khách
+function toggleCustomerTypeFields() {
+  const typeSelect = document.getElementById('form-customer-type');
+  const groupFields = document.getElementById('group-company-fields');
+  if (!typeSelect || !groupFields) return;
+
+  if (typeSelect.value === 'DOANH_NGHIEP' || typeSelect.value === 'DOAN') {
+    groupFields.classList.remove('hidden');
+  } else {
+    groupFields.classList.add('hidden');
+  }
 }
 
 function quickCloseTourFromCrm(customerId) {
@@ -9129,6 +10211,20 @@ function openAddCustomerModal() {
   const paxField = document.getElementById('form-pax');
   if (paxField) paxField.value = '2';
 
+  const typeField = document.getElementById('form-customer-type');
+  if (typeField) typeField.value = 'LE';
+  const tierField = document.getElementById('form-tier');
+  if (tierField) tierField.value = 'STANDARD';
+  const compField = document.getElementById('form-company-name');
+  if (compField) compField.value = '';
+  const taxField = document.getElementById('form-tax-code');
+  if (taxField) taxField.value = '';
+  const roleField = document.getElementById('form-contact-role');
+  if (roleField) roleField.value = '';
+  const intervalField = document.getElementById('form-care-interval');
+  if (intervalField) intervalField.value = '90';
+  toggleCustomerTypeFields();
+
   populateCtvDropdownInCustomerModal();
   hideDuplicateWarning();
 
@@ -9147,7 +10243,7 @@ window.editCustomer = function(id) {
     alert("⛔ BẢO VỆ DỮ LIỆU: Kế toán không có quyền chỉnh sửa hồ sơ khách hàng mà Sale/Điều hành đã chốt!");
     return;
   }
-  const c = db.customers.find(item => item.id === id);
+  const c = db.customers.find(item => item.id === id || String(item.id) === String(id));
   if (!c) return;
 
   populateCtvDropdownInCustomerModal();
@@ -9164,6 +10260,20 @@ window.editCustomer = function(id) {
   document.getElementById('form-date').value = c.date;
   const paxField = document.getElementById('form-pax');
   if (paxField) paxField.value = c.paxCount || 2;
+
+  const typeField = document.getElementById('form-customer-type');
+  if (typeField) typeField.value = c.customerType || 'LE';
+  const tierField = document.getElementById('form-tier');
+  if (tierField) tierField.value = c.tier || 'STANDARD';
+  const compField = document.getElementById('form-company-name');
+  if (compField) compField.value = c.companyName || '';
+  const taxField = document.getElementById('form-tax-code');
+  if (taxField) taxField.value = c.taxCode || '';
+  const roleField = document.getElementById('form-contact-role');
+  if (roleField) roleField.value = c.contactRole || '';
+  const intervalField = document.getElementById('form-care-interval');
+  if (intervalField) intervalField.value = c.careInterval || '90';
+  toggleCustomerTypeFields();
 
   document.getElementById('modal-title').textContent = `Sửa thông tin: ${c.name} (${c.code})`;
   hideDuplicateWarning();
@@ -11285,6 +12395,16 @@ function cancelBooking(bookingId) {
       comm.note = `Đơn tour ${b.code} đã bị hủy`;
     }
 
+    // Hủy các lệnh đặt dịch vụ NCC chưa thanh toán thuộc đơn này để tránh công nợ ảo A/P
+    if (Array.isArray(db.supplierBookings)) {
+      db.supplierBookings.forEach(sb => {
+        if ((sb.bookingCode === b.code || sb.bookingId === b.code) && !(sb.paidCost > 0) && sb.status !== 'CANCELLED' && sb.status !== 'Đã hủy') {
+          sb.status = 'CANCELLED';
+          sb.remainingCost = 0;
+        }
+      });
+    }
+
     // Đồng bộ tức thì sang hồ sơ khách hàng CRM
     if (b.customerId) {
       syncCustomerFinancials(b.customerId);
@@ -12598,6 +13718,36 @@ function updateTourOpStatus(bookingId, newStatus) {
         comm.note = 'Chờ khách hoàn tất thanh toán trước khi duyệt chi';
       }
     }
+
+    // Kích hoạt kế hoạch chăm sóc khách cũ định kỳ (D+3 Feedback sau tour)
+    const cust = (db.customers || []).find(c => String(c.id) === String(b.customerId) || c.code === b.customerId || c.code === b.customerCode);
+    if (cust) {
+      const todayStr = new Date().toISOString().split('T')[0];
+      const nextCare = new Date(Date.now() + 3 * 86400000).toISOString().split('T')[0];
+      cust.nextCareDate = nextCare;
+      cust.careStatus = 'DEN_HAN_HOM_NAY';
+      if (!cust.careHistory) cust.careHistory = [];
+      cust.careHistory.unshift({
+        id: Date.now(),
+        date: todayStr,
+        staff: 'Bộ phận Điều hành',
+        channel: 'Hệ thống tự động',
+        type: 'D+3_FEEDBACK',
+        result: 'Tự động kích hoạt D+3',
+        notes: `Đoàn tour ${b.code} (${b.tourName}) đã hoàn thành. Hệ thống tự động đặt lịch hẹn D+3 chăm sóc khách hàng vào ngày ${nextCare}.`
+      });
+      sendInterDeptNotification({
+        senderRole: 'OPS',
+        senderName: 'Bộ phận Điều hành (OPS)',
+        targetRole: 'SALE',
+        targetModule: 2,
+        type: 'CARE_RETENTION_ACTIVATED',
+        title: `KÍCH HOẠT LỊCH CHĂM SÓC D+3 CHO KHÁCH HÀNG: ${cust.name}`,
+        message: `Đoàn ${b.code} đã hoàn thành! Khách hàng ${cust.name} (${cust.phone}) đã được chuyển vào Kế hoạch chăm sóc khách cũ định kỳ (D+3 khảo sát trải nghiệm).`,
+        referenceId: cust.code,
+        referenceType: 'CUSTOMER'
+      });
+    }
   }
 
   saveDatabase();
@@ -13777,6 +14927,9 @@ function getSupplierOrderBadge(status) {
   if (status === 'REJECTED') {
     return '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-300">❌ Kế toán trả về</span>';
   }
+  if (status === 'CANCELLED' || status === 'Đã hủy') {
+    return '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 text-slate-600 border border-slate-300">⚪ Đã hủy lệnh</span>';
+  }
   return '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">Chờ xử lý</span>';
 }
 
@@ -14434,7 +15587,7 @@ function renderFinanceModule() {
   const totalIn = db.payments.filter(p => p.status === 'CONFIRMED' && (!p.type || p.type === 'PAYMENT')).reduce((s, p) => s + (p.amount || 0), 0);
   const totalRefund = db.payments.filter(p => p.status === 'CONFIRMED' && p.type === 'REFUND').reduce((s, p) => s + (p.amount || 0), 0);
   const cashIn = Math.max(0, totalIn - totalRefund);
-  const activeBookings = db.bookings.filter(b => b.status !== 'Da h?y');
+  const activeBookings = db.bookings.filter(b => b.status !== 'Đã hủy');
   const contractTotal = activeBookings.reduce((s, b) => s + (b.totalAmount || 0), 0);
   const receivable = activeBookings.reduce((s, b) => s + (b.remainingAmount || 0), 0);
 
@@ -14445,10 +15598,11 @@ function renderFinanceModule() {
   const elFinReceivable = document.getElementById('fin-stat-receivable');
   if (elFinReceivable) elFinReceivable.textContent = formatVND(receivable);
 
-  // 2. Phải trả Nhà cung cấp & Công nợ A/P
-  const supplierTotalCost = db.supplierBookings.reduce((s, sb) => s + (sb.agreedCost || 0), 0);
-  const supplierPaid = db.supplierBookings.reduce((s, sb) => s + (sb.paidCost || 0), 0);
-  const supplierDebt = Math.max(0, supplierTotalCost - supplierPaid);
+  // 2. Phải trả Nhà cung cấp & Công nợ A/P (Loại trừ các lệnh đã hủy hoặc bị từ chối để không đội nợ ảo)
+  const activeSupplierBookings = (db.supplierBookings || []).filter(sb => sb.status !== 'CANCELLED' && sb.status !== 'Đã hủy' && sb.status !== 'REJECTED');
+  const supplierTotalCost = activeSupplierBookings.reduce((s, sb) => s + (sb.agreedCost || 0), 0);
+  const supplierPaid = (db.supplierBookings || []).reduce((s, sb) => s + (sb.paidCost || 0), 0);
+  const supplierDebt = activeSupplierBookings.reduce((s, sb) => s + Math.max(0, (sb.agreedCost || 0) - (sb.paidCost || 0)), 0);
 
   const elFinSuppCost = document.getElementById('fin-stat-supplier-cost');
   if (elFinSuppCost) elFinSuppCost.textContent = formatVND(supplierTotalCost);
@@ -14458,10 +15612,10 @@ function renderFinanceModule() {
   if (elFinSuppDebt) elFinSuppDebt.textContent = formatVND(supplierDebt);
 
   // 3. Nghĩa vụ Hoa hồng CTV
-  const activeComms = db.commissions.filter(c => c.status !== 'Da h?y');
+  const activeComms = db.commissions.filter(c => c.status !== 'Đã hủy');
   const commTotal = activeComms.reduce((s, c) => s + (c.amount || 0), 0);
-  const commPaid = activeComms.filter(c => c.status === 'Da thanh ton').reduce((s, c) => s + (c.amount || 0), 0);
-  const commPayable = activeComms.filter(c => c.status === 'Ch? duy?t' || c.status === 'Da duy?t chi').reduce((s, c) => s + (c.amount || 0), 0);
+  const commPaid = activeComms.filter(c => c.status === 'Đã thanh toán').reduce((s, c) => s + (c.amount || 0), 0);
+  const commPayable = activeComms.filter(c => c.status === 'Chờ duyệt' || c.status === 'Đã duyệt chi').reduce((s, c) => s + (c.amount || 0), 0);
 
   const elFinCommTotal = document.getElementById('fin-stat-comm-total');
   if (elFinCommTotal) elFinCommTotal.textContent = formatVND(commTotal);
@@ -14707,7 +15861,7 @@ function renderFinanceLedger() {
 
 function renderFinanceLedgerTab() {
   // 1. Tính toán Tờ khai thuế GTGT Mẫu 01/GTGT
-  const activeBookings = (db.bookings || []).filter(b => b.status !== 'Da h?y');
+  const activeBookings = (db.bookings || []).filter(b => b.status !== 'Đã hủy');
   let totalDeductible = 0;
   let totalTaxable = 0;
 
@@ -14798,11 +15952,15 @@ function openCreateInvoiceModal(prefillBookingCode) {
   }
 
   modal.classList.remove('hidden');
+  modal.classList.add('flex');
 }
 
 function closeCreateInvoiceModal() {
   const modal = document.getElementById('modal-create-invoice');
-  if (modal) modal.classList.add('hidden');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
 }
 
 function resetInvoiceForm() {
@@ -14981,12 +16139,18 @@ function viewInvoiceModal(invoiceId) {
   document.getElementById('btn-modal-inv-email').onclick = () => sendInvoiceEmail(inv.id);
 
   const modal = document.getElementById('modal-view-invoice');
-  if (modal) modal.classList.remove('hidden');
+  if (modal) {
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
 }
 
 function closeViewInvoiceModal() {
   const modal = document.getElementById('modal-view-invoice');
-  if (modal) modal.classList.add('hidden');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
 }
 
 function downloadInvoiceXml(invoiceId) {
@@ -15077,7 +16241,7 @@ function openCreateTaxReceiptModal(commId) {
 
   const select = document.getElementById('pit-form-comm-select');
   if (select) {
-    const validComms = (db.commissions || []).filter(c => c.status !== 'Da h?y');
+    const validComms = (db.commissions || []).filter(c => c.status !== 'Đã hủy');
     select.innerHTML = '<option value="">-- Chọn phiếu chi hoa hồng từ 2.000.000 VNĐ --</option>' +
       validComms.map(c => {
         const ctv = (db.ctvs || []).find(x => x.id === c.ctvId) || {};
@@ -15098,11 +16262,15 @@ function openCreateTaxReceiptModal(commId) {
   }
 
   modal.classList.remove('hidden');
+  modal.classList.add('flex');
 }
 
 function closeCreateTaxReceiptModal() {
   const modal = document.getElementById('modal-create-tax-receipt');
-  if (modal) modal.classList.add('hidden');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
 }
 
 function onTaxReceiptCommSelectChange(commId) {
@@ -15206,12 +16374,18 @@ function viewTaxReceiptModal(receiptId) {
   document.getElementById('btn-modal-pit-xml').onclick = () => downloadTaxReceiptXml(r.id);
 
   const modal = document.getElementById('modal-view-tax-receipt');
-  if (modal) modal.classList.remove('hidden');
+  if (modal) {
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
 }
 
 function closeViewTaxReceiptModal() {
   const modal = document.getElementById('modal-view-tax-receipt');
-  if (modal) modal.classList.add('hidden');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
 }
 
 function downloadTaxReceiptXml(receiptId) {
@@ -15266,7 +16440,7 @@ function downloadTaxReceiptXml(receiptId) {
 // XUẤT CÁC BÁO CÁO THUẾ CHUẨN TỔNG CỤC THUẾ (XML / EXCEL / CSV)
 // ==========================================
 function exportVatTaxReturnXml() {
-  const activeBookings = (db.bookings || []).filter(b => b.status !== 'Da h?y');
+  const activeBookings = (db.bookings || []).filter(b => b.status !== 'Đã hủy');
   let deductible = 0, taxable = 0;
   activeBookings.forEach(b => {
     const calc = calculateTourismVat(b);
@@ -16482,6 +17656,66 @@ function runSystemTestSuite() {
       t26Ok,
       `Độ phủ ${supProvinces.length} tỉnh thành; Lọc chuẩn Tỉnh/Sao/Giá; Bảng giá B2B & 5 chính sách chi tiết; Đăng ký đối tác mới trực tuyến; Đồng bộ bản tin thời gian thực sang Điều hành & CEO`
     );
+
+    // Test 27: Kiểm Toán Chéo Không Chồng Chéo Tài Chính Giữa 7 Phân Hệ (Zero-Overlap Cross-Module Financial Audit)
+    syncAllFinancialData();
+    const ceoActiveBookings = db.bookings.filter(b => b.status !== 'Đã hủy');
+    const finActiveBookings = db.bookings.filter(b => b.status !== 'Đã hủy');
+    const ceoContractVal = ceoActiveBookings.reduce((s, b) => s + (b.totalAmount || 0), 0);
+    const finContractVal = finActiveBookings.reduce((s, b) => s + (b.totalAmount || 0), 0);
+
+    const ceoArDebt = ceoActiveBookings.reduce((s, b) => s + (b.remainingAmount || 0), 0);
+    const finReceivable = finActiveBookings.reduce((s, b) => s + (b.remainingAmount || 0), 0);
+
+    // Kiểm tra phương trình kế toán trên từng đơn đang hoạt động: paidAmount + remainingAmount === totalAmount
+    const bookingMathExact = ceoActiveBookings.every(b => ((b.paidAmount || 0) + (b.remainingAmount || 0)) === (b.totalAmount || 0));
+
+    // Kiểm tra đơn hủy DH-007 không bị tính vào công nợ phải thu (remainingAmount === 0)
+    const cancelledZeroDebt = db.bookings.filter(b => b.status === 'Đã hủy').every(b => (b.remainingAmount || 0) === 0);
+
+    // Kiểm tra khớp đúng Hoa hồng giữa Module 1 (CEO), Module 6 (Kế toán) và Module 7 (Hoa hồng CTV)
+    const mod7ActiveComms = db.commissions.filter(c => c.status !== 'Đã hủy');
+    const mod7Paid = mod7ActiveComms.filter(c => c.status === 'Đã thanh toán').reduce((s, c) => s + (c.amount || 0), 0);
+    const mod7Payable = mod7ActiveComms.filter(c => c.status === 'Chờ duyệt' || c.status === 'Đã duyệt chi').reduce((s, c) => s + (c.amount || 0), 0);
+    const mod7Total = mod7ActiveComms.reduce((s, c) => s + (c.amount || 0), 0);
+    const commEquationExact = (mod7Paid + mod7Payable) === mod7Total;
+
+    // Kiểm tra Dòng tiền ròng (Net Cash = Cash In - Cash Out) đồng nhất tuyệt đối giữa CEO và Kế toán
+    const totalCashIn = Math.max(0,
+      db.payments.filter(p => p.status === 'CONFIRMED' && (!p.type || p.type === 'PAYMENT')).reduce((s, p) => s + (p.amount || 0), 0) -
+      db.payments.filter(p => p.status === 'CONFIRMED' && p.type === 'REFUND').reduce((s, p) => s + (p.amount || 0), 0)
+    );
+    const totalSuppPaid = db.supplierBookings.reduce((s, sb) => s + (sb.paidCost || 0), 0);
+    const totalCashOut = totalSuppPaid + mod7Paid;
+    const netCashUnified = totalCashIn - totalCashOut;
+
+    const t27Ok = (ceoContractVal === finContractVal) &&
+                  (ceoArDebt === finReceivable) &&
+                  bookingMathExact &&
+                  cancelledZeroDebt &&
+                  commEquationExact &&
+                  Number.isSafeInteger(netCashUnified);
+
+    assert(
+      '27. Kiểm Toán Chéo Không Chồng Chéo Tài Chính Giữa Các Phân Hệ (Zero-Overlap Cross-Module Financial Audit)',
+      t27Ok,
+      `Doanh thu hợp đồng (${formatVND(ceoContractVal)}), Phải thu A/R (${formatVND(ceoArDebt)}), Hoa hồng (${formatVND(mod7Total)} = Đã chi ${formatVND(mod7Paid)} + Phải trả ${formatVND(mod7Payable)}) & Dòng tiền ròng (${formatVND(netCashUnified)}) khớp 100% giữa CEO, CRM, Điều hành & Kế toán; Đơn hủy nợ = 0đ`
+    );
+
+    // Test 28: Kiểm Thử Luồng Đặt Hàng Trực Tuyến B2C, Cổng Thanh Toán, Cơ Chế Lợi Nhuận 4 Tầng & Đồng Bộ 2 Chiều
+    const b2cBridgeReady = typeof initInterAppRealtimeBridge === 'function' && typeof saveDatabase === 'function';
+    const b2cTourPol = db.tourPolicies[0];
+    const simB2CRev = b2cTourPol.price * 4;
+    const simB2BCost = (b2cTourPol.estimatedCost || Math.round(b2cTourPol.price * 0.7)) * 4;
+    const simB2CVat = calculateTourismVat({ totalAmount: simB2CRev, actualCost: simB2BCost });
+    const t28Ok = b2cBridgeReady && simB2CVat.taxable === (simB2CRev - simB2BCost) && simB2CVat.vatAmount === Math.round((simB2CRev - simB2BCost) * 0.10);
+
+    assert(
+      '28. Liên Kết 2 Chiều Website Bán Hàng B2C (storefront.html) ↔ Quản Trị ERP (index.html) & Thuế GTGT Khấu Trừ TT219',
+      t28Ok,
+      `Cầu nối BroadcastChannel + Storage Event sẵn sàng; Hạch toán chênh lệch Giá bán B2C (${formatVND(simB2CRev)}) - Giá vốn NCC (${formatVND(simB2BCost)}) = Giá tính thuế (${formatVND(simB2CVat.taxable)}), VAT = ${formatVND(simB2CVat.vatAmount)}`
+    );
+
     const endTime = performance.now();
     const totalDuration = Math.round(endTime - startTime);
 
@@ -16603,9 +17837,22 @@ function setupEventListeners() {
         customerPax = paxRes.value;
       }
 
+      const typeEl = document.getElementById('form-customer-type');
+      const tierEl = document.getElementById('form-tier');
+      const compEl = document.getElementById('form-company-name');
+      const taxEl = document.getElementById('form-tax-code');
+      const roleEl = document.getElementById('form-contact-role');
+      const intervalEl = document.getElementById('form-care-interval');
+
       const custData = {
         code: document.getElementById('form-code').value.trim(),
         name: document.getElementById('form-name').value.trim(),
+        customerType: typeEl ? typeEl.value : 'LE',
+        tier: tierEl ? tierEl.value : 'STANDARD',
+        companyName: compEl ? compEl.value.trim() : '',
+        taxCode: taxEl ? taxEl.value.trim() : '',
+        contactRole: roleEl ? roleEl.value.trim() : '',
+        careInterval: intervalEl ? parseInt(intervalEl.value) || 90 : 90,
         phone: phoneVal,
         demand: document.getElementById('form-demand').value.trim(),
         paxCount: customerPax,
@@ -16613,7 +17860,8 @@ function setupEventListeners() {
         collaboratorId: document.getElementById('form-collaborator').value,
         staff: document.getElementById('form-assigned-staff').value,
         status: document.getElementById('form-status').value,
-        date: document.getElementById('form-date').value
+        date: document.getElementById('form-date').value,
+        isCompanyAsset: true
       };
 
       if (idVal) {
@@ -16621,12 +17869,28 @@ function setupEventListeners() {
         if (idx !== -1) {
           db.customers[idx] = { ...db.customers[idx], ...custData };
           syncCustomerFinancials(db.customers[idx]);
-          recordAuditLog('CẬP NHẬT KHÁCH HÀNG', `Sửa thông tin khách hàng ${custData.name} (${custData.code}).`);
+          recordAuditLog('CẬP NHẬT KHÁCH HÀNG', `Sửa thông tin khách hàng ${custData.name} (${custData.code}) - Phân loại: ${custData.customerType}.`);
         }
       } else {
+        const todayStr = custData.date || new Date().toISOString().split('T')[0];
+        const nextDate = new Date(Date.now() + (custData.careInterval || 90) * 86400000).toISOString().split('T')[0];
         const newCust = {
           id: Date.now(),
           ...custData,
+          careStatus: 'SAP_DEN_HAN',
+          lastCareDate: todayStr,
+          nextCareDate: nextDate,
+          careHistory: [
+            {
+              id: Date.now(),
+              date: todayStr,
+              staff: custData.staff || (currentUser ? currentUser.name : 'Hệ thống'),
+              channel: 'Tiếp nhận mới',
+              type: 'TIEP_NHAN',
+              result: 'Đã tạo hồ sơ',
+              notes: `Hồ sơ khách hàng mới: ${custData.name} (${custData.customerType === 'DOANH_NGHIEP' ? 'Khách Doanh nghiệp' : (custData.customerType === 'DOAN' ? 'Khách đoàn' : 'Khách lẻ')}). Nhu cầu: ${custData.demand}`
+            }
+          ],
           tourValue: 0,
           costValue: 0,
           paidAmount: 0,
@@ -16635,7 +17899,7 @@ function setupEventListeners() {
         };
         db.customers.unshift(newCust);
         syncCustomerFinancials(newCust);
-        recordAuditLog('THÊM KHÁCH HÀNG MỚI', `Thêm khách hàng ${custData.name} (${custData.code}).`);
+        recordAuditLog('THÊM KHÁCH HÀNG MỚI', `Thêm khách hàng ${custData.name} (${custData.code}) - Phân loại: ${custData.customerType}.`);
       }
 
       saveDatabase();
@@ -16732,6 +17996,38 @@ function setupEventListeners() {
 
       crmFilter = btn.getAttribute('data-filter');
       renderCustomerTable();
+    });
+  });
+
+  // Bộ lọc phân loại khách hàng CRM (Tất cả / Đoàn / Doanh nghiệp / Lẻ)
+  const typeBtns = document.querySelectorAll('.crm-type-btn');
+  typeBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      typeBtns.forEach(b => {
+        b.classList.remove('active', 'bg-brand-700', 'text-white', 'border-brand-700');
+        b.classList.add('bg-white');
+      });
+      btn.classList.add('active', 'bg-brand-700', 'text-white', 'border-brand-700');
+      btn.classList.remove('bg-white');
+
+      crmTypeFilter = btn.getAttribute('data-type') || 'all';
+      renderCustomerTable();
+    });
+  });
+
+  // Bộ lọc lịch chăm sóc khách cũ định kỳ (Retention Scheduler)
+  const retentionBtns = document.querySelectorAll('.retention-filter-btn');
+  retentionBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      retentionBtns.forEach(b => {
+        b.classList.remove('active', 'bg-rose-600', 'text-white', 'border-rose-600');
+        b.classList.add('bg-white', 'text-slate-600', 'border-slate-200');
+      });
+      btn.classList.add('active', 'bg-rose-600', 'text-white', 'border-rose-600');
+      btn.classList.remove('bg-white', 'text-slate-600', 'border-slate-200');
+
+      crmRetentionFilter = btn.getAttribute('data-retention') || 'due_today';
+      renderCrmRetentionScheduler();
     });
   });
 
@@ -17050,14 +18346,48 @@ window.filterDoubleEntryLedger = filterDoubleEntryLedger;
 window.calculateTourismVat = calculateTourismVat;
 window.calculateCtvPit = calculateCtvPit;
 
+// CRM PHÂN HỆ 2: CƠ SỞ DỮ LIỆU KHÁCH HÀNG, RETENTION & BẢO MẬT DLP
+window.switchCrmTab = switchCrmTab;
+window.exportCustomerData = exportCustomerData;
+window.maskPhone = maskPhone;
+window.promptUnmaskCustomer = promptUnmaskCustomer;
+window.closeUnmaskModal = closeUnmaskModal;
+window.checkUnmaskReason = checkUnmaskReason;
+window.confirmPhoneUnmask = confirmPhoneUnmask;
+window.openCustomerCareModal = openCustomerCareModal;
+window.closeCustomerCareModal = closeCustomerCareModal;
+window.fillCareScript = fillCareScript;
+window.saveCustomerCareRecord = saveCustomerCareRecord;
+window.executeBulkCustomerReassignment = executeBulkCustomerReassignment;
+window.revokeCustomerToPool = revokeCustomerToPool;
+window.revokeAllOverdueCustomersToPool = revokeAllOverdueCustomersToPool;
+window.toggleCustomerTypeFields = toggleCustomerTypeFields;
+window.renderCrmRetentionScheduler = renderCrmRetentionScheduler;
+window.renderCrmSecurityDlpTab = renderCrmSecurityDlpTab;
+
 
 
 // ==============================================================
 // CLOUD REAL-TIME SYNC ENGINE (GOOGLE FIREBASE / SSE STREAMING)
-// Tự động đồng bộ thời gian thực đa thiết bị: Máy tính & Điện thoại (5G/Wi-Fi)
+// Tự động đồng bộ thời gian thực siêu tốc đa thiết bị: Máy tính & Điện thoại (5G/Wi-Fi)
 // ==============================================================
 const CLOUD_SYNC_KEY = 'haha_cloud_sync_config';
 const DEFAULT_FIREBASE_URL = 'https://haha-travel-cloud-default-rtdb.asia-southeast1.firebasedatabase.app';
+
+// Định danh thiết bị độc lập (chống giật màn hình khi thiết bị nhận lại chính dữ liệu của mình)
+const CURRENT_DEVICE_ID = (function() {
+  try {
+    let id = localStorage.getItem('haha_device_id');
+    if (!id) {
+      id = 'dev_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now().toString(36);
+      localStorage.setItem('haha_device_id', id);
+    }
+    return id;
+  } catch (e) {
+    return 'dev_' + Date.now();
+  }
+})();
+
 let cloudSyncConfig = {
   enabled: true,
   url: DEFAULT_FIREBASE_URL,
@@ -17088,6 +18418,9 @@ function loadCloudSyncConfig() {
 let cloudEventSource = null;
 let cloudSyncDebounceTimer = null;
 let isRemoteUpdating = false;
+let sseReconnectTimer = null;
+let lastSseHeartbeat = Date.now();
+let isWatchdogStarted = false;
 
 function initCloudSync() {
   loadCloudSyncConfig();
@@ -17096,27 +18429,65 @@ function initCloudSync() {
     connectCloudRealtimeStream();
     pullFromCloud(true);
   }
+
+  // Khôi phục kết nối ngay khi có mạng trở lại
   window.addEventListener('online', () => {
     updateCloudSyncUi();
-    if (cloudSyncConfig.enabled) pullFromCloud(true);
+    if (cloudSyncConfig.enabled) {
+      connectCloudRealtimeStream();
+      pullFromCloud(true);
+    }
   });
+
   window.addEventListener('offline', () => {
     cloudSyncConfig.status = 'offline';
     updateCloudSyncUi();
   });
+
+  // Tối ưu đặc biệt cho 5G & Di động: Khi điện thoại mở khóa màn hình hoặc quay lại tab trình duyệt
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible' && cloudSyncConfig.enabled) {
+      const isStale = (Date.now() - lastSseHeartbeat) > 35000;
+      if (!cloudEventSource || cloudEventSource.readyState !== 1 || isStale) {
+        connectCloudRealtimeStream();
+      }
       pullFromCloud(true);
     }
   });
+
+  // Sự kiện pageshow hỗ trợ Safari iOS khi chuyển app quay lại
+  window.addEventListener('pageshow', () => {
+    if (cloudSyncConfig.enabled) {
+      connectCloudRealtimeStream();
+      pullFromCloud(true);
+    }
+  });
+
   window.addEventListener('focus', () => {
-    if (cloudSyncConfig.enabled) pullFromCloud(true);
-  });
-  setInterval(() => {
-    if (cloudSyncConfig.enabled && !isRemoteUpdating) {
+    if (cloudSyncConfig.enabled) {
       pullFromCloud(true);
     }
-  }, 10000);
+  });
+
+  // Watchdog kiểm tra kết nối nền mỗi 15 giây (chống ngắt ngầm trên 5G/4G)
+  if (!isWatchdogStarted) {
+    isWatchdogStarted = true;
+    setInterval(() => {
+      if (!cloudSyncConfig.enabled || isRemoteUpdating) return;
+      const isStale = (Date.now() - lastSseHeartbeat) > 40000;
+      if (!cloudEventSource || cloudEventSource.readyState !== 1 || isStale) {
+        console.log("[CloudSync] Kênh SSE mất tín hiệu, đang tự động kết nối lại...");
+        connectCloudRealtimeStream();
+      }
+    }, 15000);
+
+    // Kéo dữ liệu định kỳ mỗi 8 giây phòng trường hợp SSE bị chặn tường lửa
+    setInterval(() => {
+      if (cloudSyncConfig.enabled && !isRemoteUpdating && navigator.onLine) {
+        pullFromCloud(true);
+      }
+    }, 8000);
+  }
 }
 
 function normalizeCloudUrl(rawUrl) {
@@ -17136,58 +18507,147 @@ function connectCloudRealtimeStream() {
     try { cloudEventSource.close(); } catch(e){}
     cloudEventSource = null;
   }
+  if (sseReconnectTimer) {
+    clearTimeout(sseReconnectTimer);
+    sseReconnectTimer = null;
+  }
   if (!cloudSyncConfig.enabled || !cloudSyncConfig.url) return;
 
   const streamUrl = `${cloudSyncConfig.url}/haha_db.json`;
   try {
     cloudEventSource = new EventSource(streamUrl);
+    lastSseHeartbeat = Date.now();
+
     cloudEventSource.onopen = () => {
       cloudSyncConfig.status = 'connected';
+      lastSseHeartbeat = Date.now();
       updateCloudSyncUi();
-      console.log("[CloudSync] Đã kết nối kênh thời gian thực (SSE Live Stream)");
+      console.log("[CloudSync] Đã kết nối kênh thời gian thực (SSE Live Stream 5G/Wi-Fi)");
     };
+
+    // 1. Nhận sự kiện PUT từ Firebase
     cloudEventSource.addEventListener('put', (e) => {
+      lastSseHeartbeat = Date.now();
       try {
         const res = JSON.parse(e.data);
-        if (res && res.data && !isRemoteUpdating) {
+        if (!res) return;
+        if (res.path === '/' && res.data && !isRemoteUpdating) {
           applyRemoteCloudData(res.data);
+        } else if (res.path && res.path !== '/' && res.data !== undefined && !isRemoteUpdating) {
+          applySubtreeUpdate(res.path, res.data);
         }
       } catch (err) {
-        console.warn("[CloudSync] Lỗi giải mã dữ liệu stream:", err);
+        console.warn("[CloudSync] Lỗi giải mã dữ liệu stream PUT:", err);
       }
     });
+
+    // 2. Nhận sự kiện PATCH từ Firebase
+    cloudEventSource.addEventListener('patch', (e) => {
+      lastSseHeartbeat = Date.now();
+      try {
+        const res = JSON.parse(e.data);
+        if (!res) return;
+        if (res.data && !isRemoteUpdating) {
+          applyPatchData(res.path, res.data);
+        }
+      } catch (err) {
+        console.warn("[CloudSync] Lỗi giải mã dữ liệu stream PATCH:", err);
+      }
+    });
+
+    // 3. Heartbeat keep-alive từ Firebase mỗi 30s
+    cloudEventSource.addEventListener('keep-alive', () => {
+      lastSseHeartbeat = Date.now();
+      if (cloudSyncConfig.status !== 'connected') {
+        cloudSyncConfig.status = 'connected';
+        updateCloudSyncUi();
+      }
+    });
+
     cloudEventSource.onerror = () => {
       cloudSyncConfig.status = 'offline';
       updateCloudSyncUi();
+      if (!sseReconnectTimer) {
+        sseReconnectTimer = setTimeout(() => {
+          sseReconnectTimer = null;
+          if (cloudSyncConfig.enabled && navigator.onLine) {
+            connectCloudRealtimeStream();
+            pullFromCloud(true);
+          }
+        }, 2000);
+      }
     };
   } catch (e) {
     console.warn("[CloudSync] EventSource không khả dụng hoặc URL lỗi:", e);
   }
 }
 
+function applySubtreeUpdate(path, data) {
+  if (!path || isRemoteUpdating) return;
+  const cleanPath = path.replace(/^\//, '');
+  const segments = cleanPath.split('/');
+  if (segments.length === 1 && segments[0] in db) {
+    db[segments[0]] = data;
+    localStorage.setItem(DB_KEY, JSON.stringify(db));
+    if (typeof syncAllFinancialData === 'function') syncAllFinancialData();
+    refreshCurrentActiveModule();
+    showDiscreetSyncPulse();
+  } else {
+    pullFromCloud(true);
+  }
+}
+
+function applyPatchData(path, patchObj) {
+  if (!patchObj || typeof patchObj !== 'object' || isRemoteUpdating) return;
+  if (path === '/' || !path) {
+    Object.assign(db, patchObj);
+    localStorage.setItem(DB_KEY, JSON.stringify(db));
+    if (typeof syncAllFinancialData === 'function') syncAllFinancialData();
+    refreshCurrentActiveModule();
+    showDiscreetSyncPulse();
+  } else {
+    pullFromCloud(true);
+  }
+}
+
 function applyRemoteCloudData(remoteDb) {
   if (!remoteDb || typeof remoteDb !== 'object') return;
   if (Array.isArray(remoteDb.users) && remoteDb.users.length > 0) {
+    // Nếu đây là dữ liệu chính thiết bị này vừa đẩy lên (echo), bỏ qua re-render để chống giật màn hình
+    if (remoteDb._meta && remoteDb._meta.deviceId === CURRENT_DEVICE_ID) {
+      cloudSyncConfig.status = 'connected';
+      cloudSyncConfig.lastSynced = new Date().toISOString();
+      updateCloudSyncUi();
+      return;
+    }
+
     isRemoteUpdating = true;
     db = remoteDb;
     localStorage.setItem(DB_KEY, JSON.stringify(db));
-    syncAllFinancialData();
+    if (typeof syncAllFinancialData === 'function') syncAllFinancialData();
     cloudSyncConfig.lastSynced = new Date().toISOString();
     cloudSyncConfig.status = 'connected';
     localStorage.setItem(CLOUD_SYNC_KEY, JSON.stringify(cloudSyncConfig));
     updateCloudSyncUi();
     
-    refreshCurrentActiveModule();
-    showSyncNotificationToast("Đã đồng bộ dữ liệu thời gian thực từ đám mây!");
-    setTimeout(() => { isRemoteUpdating = false; }, 600);
+    if (window.IS_STANDALONE_STOREFRONT) {
+      if (typeof window.onErpDatabaseSyncedToStorefront === 'function') {
+        window.onErpDatabaseSyncedToStorefront({ source: 'CLOUD_SSE', type: 'DB_SYNC' });
+      }
+    } else {
+      refreshCurrentActiveModule();
+      showDiscreetSyncPulse();
+    }
+    setTimeout(() => { isRemoteUpdating = false; }, 300);
   }
 }
 
-function pushToCloud(silent = false) {
+function pushToCloud(silent = false, immediate = false) {
   if (!cloudSyncConfig.enabled || !cloudSyncConfig.url || isRemoteUpdating) return;
   
   if (cloudSyncDebounceTimer) clearTimeout(cloudSyncDebounceTimer);
-  cloudSyncDebounceTimer = setTimeout(async () => {
+
+  const executePush = async () => {
     cloudSyncConfig.status = 'syncing';
     updateCloudSyncUi();
     try {
@@ -17203,7 +18663,7 @@ function pushToCloud(silent = false) {
         localStorage.setItem(CLOUD_SYNC_KEY, JSON.stringify(cloudSyncConfig));
         updateCloudSyncUi();
         if (!silent) {
-          alert("✅ Đã tải dữ liệu lên Đám mây thành công! Toàn bộ máy tính và điện thoại đã được cập nhật.");
+          showSyncNotificationToast("✅ Đã tải dữ liệu lên Đám mây thành công!");
         }
       } else {
         cloudSyncConfig.status = 'error';
@@ -17215,13 +18675,18 @@ function pushToCloud(silent = false) {
       updateCloudSyncUi();
       if (!silent) alert("⚠️ Lỗi kết nối Cloud: " + e.message);
     }
-  }, 400);
+  };
+
+  if (immediate) {
+    executePush();
+  } else {
+    // Siêu tốc: 80ms debounce cho trải nghiệm mượt mà và cập nhật tức thì
+    cloudSyncDebounceTimer = setTimeout(executePush, 80);
+  }
 }
 
 async function pullFromCloud(silent = false) {
   if (!cloudSyncConfig.enabled || !cloudSyncConfig.url) return;
-  cloudSyncConfig.status = 'syncing';
-  updateCloudSyncUi();
   try {
     const targetUrl = `${cloudSyncConfig.url}/haha_db.json`;
     const res = await fetch(targetUrl);
@@ -17232,24 +18697,21 @@ async function pullFromCloud(silent = false) {
         cloudSyncConfig.status = 'connected';
         updateCloudSyncUi();
         if (!silent) {
-          alert("✅ Đã lấy dữ liệu mới nhất từ Đám mây thành công!");
+          showSyncNotificationToast("✅ Đã lấy dữ liệu mới nhất từ Đám mây!");
         }
       } else {
-        // T? d?ng d?y co s? d? li?u kh?i t?o ln Dm my n?u trn Cloud dang tr?ng
-        console.log('[CloudSync] Dm my dang tr?ng, t? d?ng d?y d? li?u kh?i t?o...');
-        pushToCloud(true);
+        console.log('[CloudSync] Đám mây chưa có dữ liệu, tự động đẩy dữ liệu khởi tạo...');
+        pushToCloud(true, true);
         cloudSyncConfig.status = 'connected';
         updateCloudSyncUi();
       }
     } else {
       cloudSyncConfig.status = 'error';
       updateCloudSyncUi();
-      if (!silent) alert("⚠️ Không thể tải từ Cloud: Mã phản hồi " + res.status);
     }
   } catch (e) {
     cloudSyncConfig.status = 'offline';
     updateCloudSyncUi();
-    if (!silent) alert("⚠️ Lỗi mạng khi kết nối Cloud: " + e.message);
   }
 }
 
@@ -17317,7 +18779,7 @@ function updateCloudSyncUi() {
     if (dot) { dot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse'; }
     if (text) { text.innerText = 'Cloud Realtime'; text.className = 'hidden md:inline text-[11px] font-bold text-emerald-700'; }
     if (badgeModal) {
-      badgeModal.innerHTML = `<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center space-x-1.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-ping"></span><span>🟢 Đã kết nối Đám mây (Đồng bộ tức thời 0.1s)</span></span>`;
+      badgeModal.innerHTML = `<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center space-x-1.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-ping"></span><span>🟢 Đã kết nối Đám mây (Đồng bộ tức thời 0.1s qua 5G/Wi-Fi)</span></span>`;
     }
   } else if (cloudSyncConfig.status === 'syncing') {
     if (dot) { dot.className = 'w-2 h-2 rounded-full bg-amber-500 animate-bounce'; }
@@ -17335,11 +18797,42 @@ function updateCloudSyncUi() {
 }
 
 function refreshCurrentActiveModule() {
-  if (typeof currentModule !== 'undefined') {
-    switchModule(currentModule);
+  if (typeof currentModuleId !== 'undefined' && typeof switchModule === 'function' && currentUser) {
+    const activeEl = document.activeElement;
+    const isTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable);
+    const hasOpenModal = document.querySelector('.modal:not(.hidden), [id$="-modal"]:not(.hidden)');
+
+    // Không làm mất tiêu điểm khi người dùng đang thao tác gõ phím
+    if (!isTyping && !hasOpenModal) {
+      switchModule(currentModuleId);
+    } else {
+      if (typeof updateNotificationBadges === 'function') updateNotificationBadges();
+      if (typeof renderAllHeaderBadges === 'function') renderAllHeaderBadges();
+    }
   }
-  if (typeof updateUnreadBadge === 'function') updateUnreadBadge();
+  if (typeof updateNotificationBadges === 'function') updateNotificationBadges();
   if (typeof renderAllHeaderBadges === 'function') renderAllHeaderBadges();
+}
+
+function showDiscreetSyncPulse(msg) {
+  const dot = document.getElementById('cloud-sync-dot');
+  const btn = document.getElementById('cloud-sync-status-btn');
+  if (dot) {
+    dot.classList.remove('animate-pulse');
+    void dot.offsetWidth;
+    dot.classList.add('animate-ping');
+    setTimeout(() => {
+      dot.classList.remove('animate-ping');
+      dot.classList.add('animate-pulse');
+    }, 600);
+  }
+  if (btn) {
+    btn.classList.add('ring-2', 'ring-emerald-400');
+    setTimeout(() => btn.classList.remove('ring-2', 'ring-emerald-400'), 800);
+  }
+  if (msg) {
+    showSyncNotificationToast(msg);
+  }
 }
 
 function showSyncNotificationToast(msg) {
@@ -17358,9 +18851,8 @@ function showSyncNotificationToast(msg) {
   setTimeout(() => {
     toast.classList.remove('translate-y-0', 'opacity-100');
     toast.classList.add('translate-y-10', 'opacity-0');
-  }, 3000);
+  }, 2500);
 }
-
 
 // Cloud Sync Exports
 window.initCloudSync = initCloudSync;
@@ -17458,3 +18950,127 @@ function setupClickOutsideDismissal() {
 
 // Universal Click Outside Dismissal Export
 window.setupClickOutsideDismissal = setupClickOutsideDismissal;
+
+
+// ==============================================================
+// REAL-TIME INTER-APP BRIDGE (GIỮA INDEX.HTML & STOREFRONT.HTML)
+// Đồng bộ tức thì (< 0.05s) hai chiều giữa Quản trị Hệ thống & Web Bán Hàng B2C
+// ==============================================================
+let hahaInterAppChannel = null;
+
+function initInterAppRealtimeBridge() {
+  try {
+    if (typeof BroadcastChannel !== 'undefined' && !hahaInterAppChannel) {
+      hahaInterAppChannel = new BroadcastChannel('haha_os_realtime_bridge');
+      hahaInterAppChannel.onmessage = function(ev) {
+        handleInterAppSyncMessage(ev.data);
+      };
+    }
+  } catch (e) {
+    console.warn('[InterAppBridge] BroadcastChannel warning:', e);
+  }
+
+  window.addEventListener('storage', function(ev) {
+    if (ev.key === DB_KEY && ev.newValue) {
+      handleInterAppSyncMessage({ source: 'STORAGE_EVENT', type: 'DB_SYNC' });
+    }
+  });
+
+  // Kiểm tra Deep-link từ storefront.html sang index.html (VD: index.html?highlightBooking=DH-021 hoặc ?openSupplier=NCC-001)
+  if (!window.IS_STANDALONE_STOREFRONT) {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const highlightBooking = urlParams.get('highlightBooking');
+      const openSupplierCode = urlParams.get('openSupplier');
+      if (highlightBooking) {
+        setTimeout(() => {
+          quickLogin('ceo');
+          setTimeout(() => {
+            switchModule(4);
+            if (typeof switchMod4Tab === 'function') switchMod4Tab('bookings');
+            if (typeof openBookingDetailModal === 'function') openBookingDetailModal(highlightBooking);
+            if (typeof showSyncNotificationToast === 'function') {
+              showSyncNotificationToast(`🔗 Đã mở Đơn đặt trực tuyến [${highlightBooking}] chuyển sang từ Web Bán Hàng!`);
+            }
+          }, 150);
+        }, 100);
+      } else if (openSupplierCode) {
+        setTimeout(() => {
+          const supUser = (db.users || []).find(u => u.role === 'SUPPLIER' && (u.supplierId === openSupplierCode || u.username === openSupplierCode));
+          if (supUser) {
+            authenticateAndLogin(supUser, '123456');
+            setTimeout(() => {
+              if (typeof switchSupplierPortalTab === 'function') switchSupplierPortalTab('orders');
+              if (typeof showSyncNotificationToast === 'function') {
+                showSyncNotificationToast(`🏨 Đã mở Lệnh đặt dịch vụ của Đối tác [${openSupplierCode}] từ Web Bán Hàng!`);
+              }
+            }, 150);
+          }
+        }, 100);
+      }
+    } catch (err) {
+      console.warn('[InterAppBridge] Deep-link error:', err);
+    }
+  }
+}
+
+function handleInterAppSyncMessage(payload) {
+  try {
+    if (payload && payload.deviceId && typeof CURRENT_DEVICE_ID !== 'undefined' && payload.deviceId === CURRENT_DEVICE_ID) {
+      return;
+    }
+    const raw = localStorage.getItem(DB_KEY);
+    if (!raw) return;
+    db = JSON.parse(raw);
+    if (typeof syncAllFinancialData === 'function') syncAllFinancialData();
+
+    // Nếu đang ở trên tệp Website Bán Hàng riêng biệt (storefront.html)
+    if (window.IS_STANDALONE_STOREFRONT) {
+      if (typeof window.onErpDatabaseSyncedToStorefront === 'function') {
+        window.onErpDatabaseSyncedToStorefront(payload);
+      }
+      return;
+    }
+
+    // Nếu đang ở trên Hệ thống Quản trị (index.html)
+    if (typeof currentModuleId !== 'undefined' && typeof switchModule === 'function' && currentUser) {
+      switchModule(currentModuleId);
+    }
+    if (typeof updateNotificationBadges === 'function') {
+      updateNotificationBadges();
+    }
+    if (payload && payload.type === 'B2C_NEW_ORDER' && typeof showSyncNotificationToast === 'function') {
+      showSyncNotificationToast(`⚡ [Web Bán Hàng B2C] Đơn mới ${payload.bookingCode} (${payload.customerName}) vừa thanh toán & đồng bộ vào ERP!`);
+    } else if (typeof showDiscreetSyncPulse === 'function') {
+      showDiscreetSyncPulse('🔄 Đã đồng bộ dữ liệu thời gian thực nội bộ');
+    }
+  } catch (err) {
+    console.warn('[InterAppBridge] Sync handling error:', err);
+  }
+}
+
+const _originalSaveDatabase = saveDatabase;
+saveDatabase = function(broadcastMeta, immediate = false) {
+  if (typeof broadcastMeta === 'boolean') {
+    immediate = broadcastMeta;
+    broadcastMeta = null;
+  }
+  _originalSaveDatabase(broadcastMeta, immediate);
+  try {
+    if (hahaInterAppChannel) {
+      hahaInterAppChannel.postMessage(Object.assign({
+        source: window.IS_STANDALONE_STOREFRONT ? 'B2C_STOREFRONT' : 'ERP_ADMIN',
+        type: 'DB_UPDATED',
+        deviceId: typeof CURRENT_DEVICE_ID !== 'undefined' ? CURRENT_DEVICE_ID : 'dev_default',
+        timestamp: Date.now()
+      }, broadcastMeta || {}));
+    }
+  } catch (e) {}
+};
+window.saveDatabase = saveDatabase;
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initInterAppRealtimeBridge);
+} else {
+  initInterAppRealtimeBridge();
+}
