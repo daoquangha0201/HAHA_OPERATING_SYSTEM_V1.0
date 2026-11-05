@@ -536,6 +536,13 @@
               </div>
             </div>
 
+            <!-- NÚT MỞ TRUNG TÂM ĐIỀU HÀNH AI AGENT -->
+            <button onclick="window.HahaAI && window.HahaAI.openModal()" id="btn-open-ai-agent" title="Trung tâm Trí tuệ Nhân tạo & Tự động hóa" class="p-1.5 sm:px-2.5 sm:py-1.5 text-xs font-extrabold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition-all shadow-xs flex items-center space-x-1.5 active:scale-95">
+              <span class="text-sm">🤖</span>
+              <span class="hidden md:inline font-bold">AI Agent Hub</span>
+              <span class="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
+            </button>
+
             <!-- NÚT CLOUD SYNC -->
             <button onclick="openBackupRestoreModal()" id="cloud-sync-status-btn" title="Đồng bộ Đám mây Thời gian thực" class="p-1.5 sm:px-2.5 sm:py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl transition-colors flex items-center space-x-1">
               <span id="cloud-sync-dot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -576,10 +583,16 @@
           <option value="11" id="opt-mobile-mod11" class="hidden">🏨 11. Cổng Đối Tác NCC</option>
         </select>
       </div>
-      <button type="button" onclick="toggleMobileSidebar()" id="btn-toggle-mobile-sidebar" class="px-2.5 py-1.5 bg-brand-50 hover:bg-brand-100 text-brand-700 text-xs font-bold rounded-xl border border-brand-200 flex items-center space-x-1 flex-shrink-0 active:scale-95 transition-all">
-        <span id="mobile-menu-icon">☰</span>
-        <span class="text-[11px]">Menu</span>
-      </button>
+      <div class="flex items-center space-x-1.5 flex-shrink-0">
+        <button type="button" onclick="window.HahaAI && window.HahaAI.openModal()" title="AI Agent" class="px-2 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-extrabold rounded-xl border border-indigo-200 flex items-center space-x-1 flex-shrink-0 active:scale-95 transition-all">
+          <span>🤖</span>
+          <span class="text-[11px]">AI</span>
+        </button>
+        <button type="button" onclick="toggleMobileSidebar()" id="btn-toggle-mobile-sidebar" class="px-2.5 py-1.5 bg-brand-50 hover:bg-brand-100 text-brand-700 text-xs font-bold rounded-xl border border-brand-200 flex items-center space-x-1 flex-shrink-0 active:scale-95 transition-all">
+          <span id="mobile-menu-icon">☰</span>
+          <span class="text-[11px]">Menu</span>
+        </button>
+      </div>
     </div>
 
     <!-- BỐ CỤC CHÍNH: SIDEBAR + NỘI DUNG PHÂN HỆ -->
@@ -6882,7 +6895,112 @@
     </div>
   </div>
 
+  <!-- ============================================== -->
+  <!-- MODAL: TRUNG TÂM ĐIỀU HÀNH MULTI-AGENT AI & TỰ ĐỘNG HÓA -->
+  <!-- ============================================== -->
+  <div id="ai-agent-modal" class="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs hidden items-center justify-center p-2 sm:p-4 overflow-y-auto">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[92vh] flex flex-col border border-slate-200 my-auto animate-in fade-in zoom-in-95 duration-150 overflow-hidden font-sans">
+      <!-- Header -->
+      <div class="px-5 py-3.5 bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 text-white flex items-center justify-between flex-shrink-0">
+        <div class="flex items-center space-x-2.5 min-w-0">
+          <div class="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center text-lg flex-shrink-0">🤖</div>
+          <div class="min-w-0">
+            <h3 class="text-xs sm:text-sm font-extrabold uppercase tracking-wide truncate">TRUNG TÂM ĐIỀU HÀNH MULTI-AGENT AI & TỰ ĐỘNG HÓA</h3>
+            <p class="text-[10px] text-indigo-200 truncate">Hạ tầng Google Firebase • 7 Trọng Pháo Nghiệp Vụ • Chốt chặn an toàn HITL</p>
+          </div>
+        </div>
+        <div class="flex items-center space-x-1.5 flex-shrink-0">
+          <button type="button" onclick="window.HahaAI.runRegressionTests()" title="Chạy bộ kiểm thử hồi quy 10 bài test" class="px-2.5 py-1.5 bg-emerald-600/90 hover:bg-emerald-600 text-white font-extrabold text-[11px] rounded-xl shadow-xs transition-all flex items-center space-x-1 active:scale-95">
+            <span>🧪</span>
+            <span class="hidden sm:inline">Kiểm Thử Hồi Quy</span>
+          </button>
+          <button type="button" onclick="window.HahaAI.runAutomationChecks()" title="Kích hoạt quét quy trình tự động" class="px-2.5 py-1.5 bg-amber-500/90 hover:bg-amber-500 text-white font-extrabold text-[11px] rounded-xl shadow-xs transition-all flex items-center space-x-1 active:scale-95">
+            <span>⚡</span>
+            <span class="hidden sm:inline">Tự Động Hóa</span>
+          </button>
+          <button type="button" onclick="window.HahaAI.closeModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-xs font-bold transition-all ml-1">✕</button>
+        </div>
+      </div>
+
+      <!-- Agent Selection Tabs -->
+      <div class="bg-slate-100/90 px-4 py-2 border-b border-slate-200 overflow-x-auto flex-shrink-0">
+        <div id="ai-agent-tabs-list" class="flex items-center space-x-2">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+
+      <!-- Current Agent Banner & Guardrails -->
+      <div class="px-5 py-2.5 bg-slate-50 border-b border-slate-200 flex-shrink-0 space-y-1.5">
+        <div class="flex items-center justify-between">
+          <div id="ai-current-agent-title" class="font-extrabold text-xs text-slate-800"></div>
+          <span class="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 flex items-center space-x-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>Google Firebase Connected</span>
+          </span>
+        </div>
+        <p id="ai-current-agent-desc" class="text-[11px] text-slate-600 italic"></p>
+        <div id="ai-current-guardrails"></div>
+      </div>
+
+      <!-- Chat Messages Container -->
+      <div id="ai-chat-messages-container" class="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-100/50 min-h-[260px] max-h-[45vh]">
+        <!-- Welcome Message -->
+        <div class="flex justify-start my-2">
+          <div class="bg-white border border-slate-200 rounded-2xl rounded-tl-xs p-3.5 max-w-[90%] text-xs shadow-xs space-y-1.5">
+            <div class="flex items-center space-x-2 text-[11px] font-bold text-slate-700 border-b border-slate-100 pb-1.5">
+              <span>🤖</span>
+              <span class="text-indigo-900">AI Điều Phối Trung Tâm (Master Orchestrator)</span>
+            </div>
+            <p class="text-slate-800 leading-relaxed">
+              Xin chào Giám đốc! Tôi là <b>AI Điều Phối Trung Tâm</b> của HaHa Eco Travel. Toàn bộ 7 Agent chuyên trách (Kinh doanh, Điều hành, Kế toán, CTV, Marketing, Giám đốc) đã sẵn sàng phục vụ bạn và kết nối trực tiếp với đám mây Google Firebase.
+            </p>
+            <p class="text-[11px] text-slate-600">
+              👉 Bạn có thể bấm vào các gợi ý lệnh nhanh bên dưới hoặc nhập câu hỏi bất kỳ bằng tiếng Việt!
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Action Prompt Chips -->
+      <div class="px-4 py-2 bg-white border-t border-slate-200 overflow-x-auto flex-shrink-0">
+        <div class="flex items-center space-x-1.5 text-[11px]">
+          <span class="text-slate-400 font-bold text-[10px] uppercase flex-shrink-0">Gợi ý lệnh:</span>
+          <button type="button" onclick="window.HahaAI.quickPrompt('Báo cáo tổng quan doanh thu, chi phí và lợi nhuận hôm nay', 'EXECUTIVE')" class="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg font-bold border border-rose-200 whitespace-nowrap transition-colors flex-shrink-0">
+            📊 Báo cáo Giám đốc
+          </button>
+          <button type="button" onclick="window.HahaAI.quickPrompt('Chiết tính bóc tách thuế GTGT lữ hành TT 219 cho đơn DH-201', 'FINANCE')" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-lg font-bold border border-emerald-200 whitespace-nowrap transition-colors flex-shrink-0">
+            🧾 Chiết tính thuế TT219
+          </button>
+          <button type="button" onclick="window.HahaAI.quickPrompt('Lập báo giá tour Cát Tiên 2N1Đ cho đoàn 6 khách', 'SALES')" class="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-800 rounded-lg font-bold border border-blue-200 whitespace-nowrap transition-colors flex-shrink-0">
+            💼 Báo giá tour 6 khách
+          </button>
+          <button type="button" onclick="window.HahaAI.quickPrompt('Soạn lệnh điều hành và voucher nhà xe/khách sạn cho đơn DH-201', 'OPS')" class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg font-bold border border-amber-200 whitespace-nowrap transition-colors flex-shrink-0">
+            🧭 Lệnh điều hành NCC
+          </button>
+          <button type="button" onclick="window.HahaAI.quickPrompt('Chính sách hoa hồng và tài liệu bán hàng cho CTV Hoàng Yến', 'AFFILIATE')" class="px-2.5 py-1 bg-teal-50 hover:bg-teal-100 text-teal-800 rounded-lg font-bold border border-teal-200 whitespace-nowrap transition-colors flex-shrink-0">
+            🌱 Hoa hồng & Sales Kit CTV
+          </button>
+          <button type="button" onclick="window.HahaAI.quickPrompt('Viết bài marketing quảng bá tour sinh thái Cát Tiên cho fanpage', 'MARKETING')" class="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-800 rounded-lg font-bold border border-purple-200 whitespace-nowrap transition-colors flex-shrink-0">
+            📢 Viết bài Marketing
+          </button>
+        </div>
+      </div>
+
+      <!-- Prompt Input Footer -->
+      <div class="p-3 bg-slate-50 border-t border-slate-200 flex-shrink-0">
+        <form onsubmit="event.preventDefault(); window.HahaAI.handleSendPrompt();" class="flex items-center space-x-2">
+          <input type="text" id="ai-user-prompt-input" placeholder="Nhập yêu cầu bằng tiếng Việt (VD: Tính thuế đơn DH-201, báo giá đoàn 10 khách...)" class="flex-1 px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-inner">
+          <button type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-all active:scale-95 flex items-center space-x-1.5 flex-shrink-0">
+            <span>Gửi</span>
+            <span>🚀</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <script src="app.js?v=2.0.3"></script>
+  <script src="ai-agent-engine.js?v=2.1.0"></script>
   <script>
     if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
       window.addEventListener('load', function() {

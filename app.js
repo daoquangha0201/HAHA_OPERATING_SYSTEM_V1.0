@@ -18897,7 +18897,8 @@ function setupClickOutsideDismissal() {
     'modal-view-tax-receipt': () => typeof closeViewTaxReceiptModal === 'function' && closeViewTaxReceiptModal(),
     'change-password-modal': () => typeof closeChangePasswordModal === 'function' && closeChangePasswordModal(),
     'ctv-submit-lead-modal': () => typeof closeCtvSubmitLeadModal === 'function' && closeCtvSubmitLeadModal(),
-    'ctv-close-tour-modal': () => typeof closeCtvCloseTourModal === 'function' && closeCtvCloseTourModal()
+    'ctv-close-tour-modal': () => typeof closeCtvCloseTourModal === 'function' && closeCtvCloseTourModal(),
+    'ai-agent-modal': () => window.HahaAI && typeof window.HahaAI.closeModal === 'function' && window.HahaAI.closeModal()
   };
 
   let mouseDownTarget = null;
