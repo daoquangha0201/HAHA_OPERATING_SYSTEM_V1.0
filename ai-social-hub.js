@@ -1,4 +1,4 @@
-/**
+﻿/**
  * HAHA ECO TRAVEL - AI SOCIAL HUB (MODULE TỰ ĐỘNG HÓA MẠNG XÃ HỘI CHO CTV)
  * - Tự động tạo nội dung cá nhân hóa (Blogger, Chữa lành, Phượt thủ, Chuyên gia).
  * - Kết nối tài khoản mạng xã hội OAuth an toàn (Facebook, Instagram, TikTok, Zalo).
@@ -249,6 +249,10 @@
       if (typeof saveDatabase === 'function') saveDatabase();
       if (typeof recordAuditLog === 'function') {
         recordAuditLog('KẾT NỐI MẠNG XÃ HỘI', `CTV ${currentCtvId} đã kết nối tài khoản ${p.name} (${accountName}) qua giao thức OAuth.`);
+      // 4. Kich hoat Webhook n8n / Make neu co cau hinh
+      if (window.HahaAiConnector && typeof window.HahaAiConnector.triggerN8nLeadWebhook === "function") {
+        window.HahaAiConnector.triggerN8nLeadWebhook(newCust);
+      }
       }
 
       alert(`✅ KẾT NỐI THÀNH CÔNG!\n\nNền tảng: ${p.name}\nTài khoản: ${accountName}\nTrạng thái: Đã cấp quyền OAuth an toàn 60 ngày.\nBảo mật: Mật khẩu của bạn an toàn 100%.`);
@@ -615,10 +619,83 @@
                 <span>🔄</span>
                 <span>Tạo Lại Phiên Bản Khác</span>
               </button>
+              <div class="flex items-center space-x-2">
+                <button type="button" onclick="window.HahaSocialHub.generateLiveLlmContent()" class="px-3 py-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all active:scale-95 flex items-center space-x-1.5">
+                  <span>&#10024;</span>
+                  <span>Sinh Bang AI Truc Tiep (Gemini / GPT-4o / Claude)</span>
+                </button>
+                <div id="hub-llm-generate-status" class="text-[11px]"></div>
+              </div>
             </div>
 
             <div id="hub-studio-variants-container" class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <!-- Rendered via JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- PHAN 3A: STUDIO AM THANH (ELEVENLABS) & PROMPT ANH BAN QUYEN (MIDJOURNEY / FLUX) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- 1. ElevenLabs Audio Guide -->
+          <div class="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div class="flex items-center space-x-2">
+                <span class="text-xl">&#127897;&#65039;</span>
+                <div>
+                  <h4 class="font-extrabold text-xs text-slate-900 uppercase">Audio Guide Thuyet Minh & Video Long Tieng</h4>
+                  <span class="text-[10px] text-purple-700 font-bold">ElevenLabs AI Voice</span>
+                </div>
+              </div>
+              <button type="button" onclick="window.HahaAiConnector.openConfigModal()" class="text-[10px] text-indigo-600 font-bold hover:underline">Cau hinh Voice Key</button>
+            </div>
+            <p class="text-[11px] text-slate-500">Tao giong doc thuyet minh sinh thai tai diem cho du khach hoac dung lam voiceover cho video TikTok cua CTV.</p>
+            <div class="p-3 bg-purple-50/60 rounded-xl border border-purple-100 space-y-2">
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-bold text-purple-950">Giong doc mau: Huong Giang (Ha Noi - Tram am)</span>
+                <span class="text-[10px] px-2 py-0.5 rounded bg-purple-200 text-purple-900 font-bold">100% Tu Nhien</span>
+              </div>
+              <div class="text-[11px] text-slate-700 italic bg-white p-2.5 rounded-lg border border-purple-200/50">
+                "Chao mung quy khach den voi rung Cay Tung ngan nam tuoi... Hay hit tho that sau va lang nghe tieng suoi reo hoa cung chim rung riu rit..."
+              </div>
+              <div class="flex items-center justify-between pt-1">
+                <button type="button" onclick="window.HahaSocialHub.playDemoAudioGuide()" id="btn-audio-guide-play" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all flex items-center space-x-1.5">
+                  <span>&#9654;&#65039;</span>
+                  <span>Nghe Thu Audio Guide</span>
+                </button>
+                <button type="button" onclick="window.HahaSocialHub.copyAudioGuideScript()" class="text-xs text-purple-700 font-bold hover:underline">
+                  &#128203; Sao chep kich ban doc
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. Midjourney / Flux / DALL-E 3 Visual Studio -->
+          <div class="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div class="flex items-center space-x-2">
+                <span class="text-xl">&#127912;</span>
+                <div>
+                  <h4 class="font-extrabold text-xs text-slate-900 uppercase">Studio Prompt Anh Ban Quyen 8K</h4>
+                  <span class="text-[10px] text-amber-700 font-bold">Midjourney v6.1 \u2022 Flux.1 \u2022 DALL-E 3</span>
+                </div>
+              </div>
+            </div>
+            <p class="text-[11px] text-slate-500">Tu dong sinh Prompt tieng Anh chuan thong so ky thuat de tao anh phong canh rung va glamping khong lo ban quyen.</p>
+            <div class="p-3 bg-amber-50/60 rounded-xl border border-amber-100 space-y-2">
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-bold text-amber-950">Prompt Cinematic Tour Sinh Thai:</span>
+                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-200 text-amber-900 font-bold">--ar 16:9 --v 6.1</span>
+              </div>
+              <div id="hub-visual-prompt-text" class="text-[10px] font-mono text-slate-700 bg-white p-2.5 rounded-lg border border-amber-200/50 max-h-20 overflow-y-auto select-all">
+Cinematic landscape photography of Nam Cat Tien National Park, Vietnam eco-tourism. Untouched dense tropical rainforest, ancient Tung tree with giant roots, morning mist drifting through the green canopy, golden hour sunlight rays breaking through leaves, crystal clear river stream. Photorealistic, 8k resolution, shot on 35mm lens, f/2.8, National Geographic style, award winning eco-travel aesthetic, no plastic, zero pollution --ar 16:9 --v 6.1 --style raw
+              </div>
+              <div class="flex items-center justify-between pt-1">
+                <button type="button" onclick="window.HahaSocialHub.copyVisualPrompt()" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all flex items-center space-x-1.5">
+                  <span>&#128203;</span>
+                  <span>Sao Chep Prompt Cho Midjourney / Canva</span>
+                </button>
+                <span class="text-[10px] text-amber-800 font-semibold">Ty le 16:9 Banner</span>
+              </div>
             </div>
           </div>
         </div>
@@ -932,6 +1009,119 @@ ${escapeHtml(v.body)}
 
       alert(`🎉 ĐÃ PHÁT ĐỘNG CHIẾN DỊCH THÀNH CÔNG!\n\nTên chiến dịch: ${title.trim()}\nHoa hồng: ${highlight.trim()}\n\nAI Content Agent đã tự động sinh các biến thể bài viết theo từng phong cách và gửi thông báo vào Cổng CTV!`);
       this.renderAdminSocialHub();
+    }
+
+    // ============================================================== 
+    // NANG CAP: LIVE LLM GENERATION & MULTIMODAL PROMPT HELPERS
+    // ============================================================== 
+    generateLiveLlmContent: async function() {
+      const campId = document.getElementById("hub-select-campaign")?.value || "CAMP-01";
+      const platKey = document.getElementById("hub-select-platform")?.value || "FACEBOOK";
+      const styleKey = document.getElementById("hub-select-style")?.value || "BLOGGER";
+      const camp = (db.socialCampaigns || []).find(c => c.id === campId) || (db.socialCampaigns || [])[0];
+      const p = this.PLATFORMS[platKey] || this.PLATFORMS.FACEBOOK;
+      const style = this.PERSONA_STYLES[styleKey] || this.PERSONA_STYLES.BLOGGER;
+      const ctv = (db.ctvs || []).find(c => c.id === (currentUser ? currentUser.ctvId : "CTV-001")) || (db.ctvs || [])[0] || { id: "CTV-001", refCode: "HAHA-YEN88", name: "Hoang Yen" };
+      const refUrl = `https://daoquangha0201.github.io/HAHA-ECO-TRAVEL/storefront.html?ref=${ctv.id}&camp=${camp.code}`;
+
+      if (!window.HahaAiConnector || window.HahaAiConnector.config.activeProvider === "offline" || !window.HahaAiConnector.hasKey(window.HahaAiConnector.config.activeProvider)) {
+        alert("Chua cau hinh API Key cho Google Gemini, ChatGPT hoac Claude.\\n\\nHe thong se mo bang cau hinh AI de ban nhap Key.");
+        if (window.HahaAiConnector) window.HahaAiConnector.openConfigModal();
+        return;
+      }
+
+      const provider = window.HahaAiConnector.config.activeProvider;
+      const meta = window.HahaAiConnector.getMetadata(provider);
+      const statusEl = document.getElementById("hub-llm-generate-status");
+      if (statusEl) statusEl.innerHTML = `<span class="text-indigo-600 font-bold animate-pulse">\u23F3 Dang goi ${meta.name}...</span>`;
+
+      const prompt = `Viet bai quang ba ban tour: ${camp.tourName}. Nen tang: ${p.name}. Phong cach CTV: ${style.name} (${style.voice}). CTV: ${ctv.name}. Link CTV: ${refUrl}. Hay tao 3 phien ban (Cau chuyen trai nghiem, Review cam nang, Kich ban TikTok 30s co visual hook va audio suggestion).`;
+      const sysPrompt = `Ban la chuyen gia AI Marketing du lich sinh thai HaHa Eco Travel. Van phong am ap, truyen cam, khong xao rong, nhan manh du lich khong rac thai nhua va chua lanh.`;
+
+      try {
+        const res = await window.HahaAiConnector.chatCompletion(prompt, sysPrompt, provider);
+        if (res && res.text) {
+          const container = document.getElementById("hub-studio-variants-container");
+          if (container) {
+            container.innerHTML = `
+              <div class="col-span-full bg-gradient-to-r from-indigo-50 to-purple-50 p-5 rounded-2xl border border-indigo-200 space-y-3">
+                <div class="flex items-center justify-between">
+                  <span class="px-3 py-1 rounded-full text-xs font-extrabold bg-indigo-600 text-white flex items-center space-x-1.5">
+                    <span>${meta.icon}</span>
+                    <span>Truc tiep tu ${meta.name} (${res.model} \u2022 ${res.latencyMs}ms)</span>
+                  </span>
+                  <button type="button" onclick="window.HahaSocialHub.copyRawLlmText()" class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 shadow-xs">
+                    \uD83D\uDCCB Sao chep toan bo ket qua AI
+                  </button>
+                </div>
+                <div id="hub-raw-llm-text" class="p-4 bg-white rounded-xl border border-slate-200 text-xs text-slate-800 leading-relaxed whitespace-pre-wrap font-sans max-h-96 overflow-y-auto">${res.text}</div>
+              </div>
+            `;
+          }
+          if (statusEl) statusEl.innerHTML = `<span class="text-emerald-700 font-bold">\u2713 Hoan tat boi ${meta.name} (${res.latencyMs}ms)!</span>`;
+        }
+      } catch (err) {
+        alert("Loi API AI: " + err.message);
+        if (statusEl) statusEl.innerHTML = `<span class="text-rose-600 font-bold">\u2715 Loi: ${err.message}</span>`;
+      }
+    },
+
+    copyRawLlmText: function() {
+      const el = document.getElementById("hub-raw-llm-text");
+      if (el && navigator.clipboard) {
+        navigator.clipboard.writeText(el.innerText).then(() => alert("Da sao chep toan bo noi dung tu AI!"));
+      }
+    },
+
+    copyVisualPrompt: function() {
+      const el = document.getElementById("hub-visual-prompt-text");
+      if (el && navigator.clipboard) {
+        navigator.clipboard.writeText(el.innerText.trim()).then(() => alert("Da sao chep Prompt Anh Midjourney / Flux vao Clipboard!"));
+      }
+    },
+
+    copyAudioGuideScript: function() {
+      const campId = document.getElementById("hub-select-campaign")?.value || "CAMP-01";
+      const camp = (db.socialCampaigns || []).find(c => c.id === campId) || (db.socialCampaigns || [])[0];
+      const script = (window.HahaAiConnector && typeof window.HahaAiConnector.buildAudioGuideScript === "function")
+        ? window.HahaAiConnector.buildAudioGuideScript(camp.tourName)
+        : "Chao mung quy khach den voi hanh trinh HaHa Eco Travel...";
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(script).then(() => alert("Da sao chep kich ban Audio Guide ElevenLabs!"));
+      }
+    },
+
+    playDemoAudioGuide: function() {
+      const btn = document.getElementById("btn-audio-guide-play");
+      if (!btn) return;
+      if (btn.classList.contains("playing")) {
+        btn.classList.remove("playing");
+        btn.innerHTML = `<span>\u25B6\uFE0F</span><span>Nghe Thu Audio Guide</span>`;
+        alert("Da dung phat Audio Guide.");
+      } else {
+        btn.classList.add("playing");
+        btn.innerHTML = `<span class="animate-spin">\u23F3</span><span>Dang phat Audio Guide...</span>`;
+        if ("speechSynthesis" in window) {
+          const campId = document.getElementById("hub-select-campaign")?.value || "CAMP-01";
+          const camp = (db.socialCampaigns || []).find(c => c.id === campId) || (db.socialCampaigns || [])[0];
+          const text = (window.HahaAiConnector && typeof window.HahaAiConnector.buildAudioGuideScript === "function")
+            ? window.HahaAiConnector.buildAudioGuideScript(camp.tourName)
+            : "Chao mung quy khach den voi tour sinh thai HaHa.";
+          const utter = new SpeechSynthesisUtterance(text.slice(0, 150));
+          utter.lang = "vi-VN";
+          utter.onend = () => {
+            btn.classList.remove("playing");
+            btn.innerHTML = `<span>\u25B6\uFE0F</span><span>Nghe Thu Audio Guide</span>`;
+          };
+          window.speechSynthesis.speak(utter);
+        } else {
+          setTimeout(() => {
+            btn.classList.remove("playing");
+            btn.innerHTML = `<span>\u25B6\uFE0F</span><span>Nghe Thu Audio Guide</span>`;
+            alert("Trinh duyet cua ban khong ho tro Web Speech. Vui long dung ElevenLabs API de tai file MP3 goc.");
+          }, 2000);
+        }
+      }
     }
   };
 

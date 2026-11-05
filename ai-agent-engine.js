@@ -1,4 +1,4 @@
-/**
+﻿/**
  * HAHA ECO TRAVEL OPERATING SYSTEM - MULTI-AGENT AI ENGINE & AUTOMATION WORKFLOWS
  * Phiên bản: 2.1 (Tích hợp Google Firebase Cloud & Khung Kiểm Thử Hồi Quy)
  * - Kiến trúc 7 AI Agents chuyên trách: Master Orchestrator, Sales, Ops, Finance, CTV, Marketing, CEO.
@@ -170,7 +170,7 @@
       const titleEl = document.getElementById('ai-current-agent-title');
       const descEl = document.getElementById('ai-current-agent-desc');
       const guardrailsEl = document.getElementById('ai-current-guardrails');
-      if (titleEl) titleEl.innerHTML = `${ag.avatar} ${ag.name} <span class="text-xs font-normal text-slate-500">(${ag.title})</span>`;
+      if (titleEl) { let badge = (window.HahaAiConnector && typeof window.HahaAiConnector.renderStatusBadgeHtml === "function") ? window.HahaAiConnector.renderStatusBadgeHtml() : ""; titleEl.innerHTML = `<div class="flex items-center justify-between w-full flex-wrap gap-2"><span>${ag.avatar} ${ag.name} <span class="text-xs font-normal text-slate-500">(${ag.title})</span></span>${badge}</div>`; }
       if (descEl) descEl.textContent = ag.description;
       if (guardrailsEl) {
         guardrailsEl.innerHTML = `
@@ -287,7 +287,7 @@
     // ==============================================================
     // 3. BỘ PHÂN TÍCH Ý ĐỊNH & THỰC THI NGHIỆP VỤ (AI REASONING CORE)
     // ==============================================================
-    processPrompt: function(rawPrompt) {
+    processPrompt: async function(rawPrompt) {
       const q = rawPrompt.toLowerCase().trim();
       const currentDb = (typeof db !== 'undefined' && db) ? db : {};
 
@@ -312,6 +312,30 @@
       // 2. Xử lý câu hỏi tương ứng theo Domain Agent
       const agent = this.currentAgent;
 
+      // 2. KET NOI VOI LLM NGOAI (GEMINI, OPENAI, CLAUDE) QUA HAHA AI CONNECTOR
+      if (window.HahaAiConnector && window.HahaAiConnector.config.activeProvider !== "offline" && window.HahaAiConnector.hasKey(window.HahaAiConnector.config.activeProvider)) {
+        const provider = window.HahaAiConnector.config.activeProvider;
+        const meta = window.HahaAiConnector.getMetadata(provider);
+        const agentMeta = this.agents[agent] || this.agents.ORCHESTRATOR;
+        const loadingId = "ai-loading-" + Date.now();
+        this.chatHistory.push({ role: "agent", agent: agentMeta, content: `\u23F3 *Dang ket noi **${meta.name}** de phan tich du lieu dieu hanh va suy luan...*`, time: new Date().toLocaleTimeString("vi-VN"), loadingId: loadingId });
+        this.renderChatMessages();
+        const systemPrompt = `Ban la ${agentMeta.name} (${agentMeta.title}) trong he dieu hanh HaHa Eco Travel (Chuyen tour sinh thai Cat Tien, Mang Den, trekking, chua lanh). Luon ap dung Thong tu 219/2013/TT-BTC ve thue GTGT lu hanh. Nhiem vu: Tra loi ngan gon, nghiep vu sac ben, so lieu minh bach, dung Markdown ro rang va bieu tuong cam xuc sinh thai.`;
+        try {
+          const llmRes = await window.HahaAiConnector.chatCompletion(rawPrompt, systemPrompt, provider);
+          this.chatHistory = this.chatHistory.filter(m => m.loadingId !== loadingId);
+          if (llmRes && llmRes.text && !llmRes.isFallback) {
+            const reply = `\u2728 **[${llmRes.providerName} \u2022 ${llmRes.model} \u2022 ${llmRes.latencyMs}ms]**\n\n${llmRes.text}`;
+            this.addAgentMessage(reply);
+            return;
+          }
+        } catch (e) {
+          console.warn("[AI Agent Engine] LLM call error:", e);
+          this.chatHistory = this.chatHistory.filter(m => m.loadingId !== loadingId);
+        }
+      }
+
+      // 3. Fallback Heuristic Quy tac noi bo
       if (agent === 'EXECUTIVE') {
         this.handleExecutiveQuery(q, currentDb);
       } else if (agent === 'FINANCE') {

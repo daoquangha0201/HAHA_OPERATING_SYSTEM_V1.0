@@ -548,6 +548,11 @@
               <span class="hidden md:inline font-bold">AI Agent Hub</span>
               <span class="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
             </button>
+              <!-- NUT CAU HINH BO NAO AI -->
+              <button onclick="window.HahaAiConnector && window.HahaAiConnector.openConfigModal()" title="Cau hinh Bo Nao AI: Gemini, ChatGPT, Claude, ElevenLabs" class="p-1.5 sm:px-2.5 sm:py-1.5 text-xs font-extrabold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl transition-all shadow-xs flex items-center space-x-1.5 active:scale-95">
+                <span class="text-sm">&#9881;&#65039;</span>
+                <span class="hidden lg:inline font-bold">Cau Hinh AI</span>
+              </button>
 
             <!-- NÚT CLOUD SYNC -->
             <!-- NUT LAM SACH DU LIEU (CLEAN SLATE TESTING MODE) -->
@@ -6948,6 +6953,10 @@
           </div>
         </div>
         <div class="flex items-center space-x-1.5 flex-shrink-0">
+          <button type="button" onclick="window.HahaAiConnector && window.HahaAiConnector.openConfigModal()" title="Cau hinh Gemini, ChatGPT, Claude" class="px-2.5 py-1.5 bg-indigo-600/90 hover:bg-indigo-600 text-white font-extrabold text-[11px] rounded-xl shadow-xs transition-all flex items-center space-x-1 active:scale-95">
+            <span>&#9881;&#65039;</span>
+            <span class="hidden sm:inline">Cau Hinh AI</span>
+          </button>
           <button type="button" onclick="window.HahaAI.runRegressionTests()" title="Chạy bộ kiểm thử hồi quy 10 bài test" class="px-2.5 py-1.5 bg-emerald-600/90 hover:bg-emerald-600 text-white font-extrabold text-[11px] rounded-xl shadow-xs transition-all flex items-center space-x-1 active:scale-95">
             <span>🧪</span>
             <span class="hidden sm:inline">Kiểm Thử Hồi Quy</span>
@@ -7038,6 +7047,7 @@
   </div>
 
   <script src="app.js?v=2.0.3"></script>
+  <script src="ai-connector-hub.js?v=2.1.0"></script>
   <script src="ai-agent-engine.js?v=2.1.0"></script>
   <script src="ai-social-hub.js?v=2.1.0"></script>
   <script>
