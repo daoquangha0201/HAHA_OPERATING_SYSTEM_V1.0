@@ -249,10 +249,6 @@
       if (typeof saveDatabase === 'function') saveDatabase();
       if (typeof recordAuditLog === 'function') {
         recordAuditLog('KẾT NỐI MẠNG XÃ HỘI', `CTV ${currentCtvId} đã kết nối tài khoản ${p.name} (${accountName}) qua giao thức OAuth.`);
-      // 4. Kich hoat Webhook n8n / Make neu co cau hinh
-      if (window.HahaAiConnector && typeof window.HahaAiConnector.triggerN8nLeadWebhook === "function") {
-        window.HahaAiConnector.triggerN8nLeadWebhook(newCust);
-      }
       }
 
       alert(`✅ KẾT NỐI THÀNH CÔNG!\n\nNền tảng: ${p.name}\nTài khoản: ${accountName}\nTrạng thái: Đã cấp quyền OAuth an toàn 60 ngày.\nBảo mật: Mật khẩu của bạn an toàn 100%.`);
@@ -434,6 +430,11 @@
       if (typeof renderNotificationCenter === 'function') renderNotificationCenter();
       if (typeof recordAuditLog === 'function') {
         recordAuditLog('LEAD PHÁT SINH TỪ SOCIAL', `Khách hàng ${custName} được AI Lead Gen Agent ghi nhận từ kênh CTV ${ctv.id}.`);
+      }
+
+      // 4. Kich hoat Webhook n8n / Make neu co cau hinh
+      if (window.HahaAiConnector && typeof window.HahaAiConnector.triggerN8nLeadWebhook === "function") {
+        window.HahaAiConnector.triggerN8nLeadWebhook(newCust);
       }
 
       alert(`🎉 CHÚC MỪNG! AI LEAD GEN AGENT VỪA THU THẬP THÀNH CÔNG 1 LEAD MỚI!\n\nKhách hàng: ${custName} (${phone})\nĐăng ký: ${camp.tourName} (${pax} khách)\nNguồn tiếp thị: Kênh xã hội của CTV ${ctv.name}\n\n-> Dữ liệu đã được liên thông 100% vào CRM Khách hàng (Phân hệ 2) và thông báo cho Sale phụ trách!`);
@@ -1009,7 +1010,7 @@ ${escapeHtml(v.body)}
 
       alert(`🎉 ĐÃ PHÁT ĐỘNG CHIẾN DỊCH THÀNH CÔNG!\n\nTên chiến dịch: ${title.trim()}\nHoa hồng: ${highlight.trim()}\n\nAI Content Agent đã tự động sinh các biến thể bài viết theo từng phong cách và gửi thông báo vào Cổng CTV!`);
       this.renderAdminSocialHub();
-    }
+    },
 
     // ============================================================== 
     // NANG CAP: LIVE LLM GENERATION & MULTIMODAL PROMPT HELPERS
@@ -1024,11 +1025,7 @@ ${escapeHtml(v.body)}
       const ctv = (db.ctvs || []).find(c => c.id === (currentUser ? currentUser.ctvId : "CTV-001")) || (db.ctvs || [])[0] || { id: "CTV-001", refCode: "HAHA-YEN88", name: "Hoang Yen" };
       const refUrl = `https://daoquangha0201.github.io/HAHA-ECO-TRAVEL/storefront.html?ref=${ctv.id}&camp=${camp.code}`;
 
-      if (!window.HahaAiConnector || window.HahaAiConnector.config.activeProvider === "offline" || !window.HahaAiConnector.hasKey(window.HahaAiConnector.config.activeProvider)) {
-        alert("Chua cau hinh API Key cho Google Gemini, ChatGPT hoac Claude.\\n\\nHe thong se mo bang cau hinh AI de ban nhap Key.");
-        if (window.HahaAiConnector) window.HahaAiConnector.openConfigModal();
-        return;
-      }
+      if (!window.HahaAiConnector) { alert('Lá»—i: Há»‡ thá»‘ng AI Connector Hub chÆ°a sáºµn sÃ ng.'); return; }
 
       const provider = window.HahaAiConnector.config.activeProvider;
       const meta = window.HahaAiConnector.getMetadata(provider);
