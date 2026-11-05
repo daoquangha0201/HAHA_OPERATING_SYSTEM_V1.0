@@ -12,6 +12,13 @@
 (function(window) {
   'use strict';
 
+  function formatVND(n) {
+    if (typeof window !== 'undefined' && typeof window.formatVND === 'function' && window.formatVND !== formatVND) {
+      return window.formatVND(n);
+    }
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(n) || 0);
+  }
+
   const STORAGE_KEY = 'HAHA_AI_CONNECTOR_CONFIG';
 
   const PROVIDER_METADATA = {
