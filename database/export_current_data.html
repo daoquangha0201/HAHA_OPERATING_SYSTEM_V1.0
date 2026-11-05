@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Công Cụ Xuất Dữ Liệu An Toàn - HaHa Eco Travel ERP</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex items-center justify-center p-4">
+  <div class="bg-slate-800 border border-slate-700 rounded-3xl p-6 sm:p-8 max-w-xl w-full shadow-2xl space-y-6">
+    <div class="flex items-center space-x-3">
+      <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-2xl font-bold">
+        💾
+      </div>
+      <div>
+        <h1 class="text-lg font-black text-white">XUẤT DỮ LIỆU GỐC DỰ PHÒNG (BASELINE)</h1>
+        <p class="text-xs text-slate-400">Giai đoạn 0: Bảo toàn 100% dữ liệu trước khi nâng cấp Supabase</p>
+      </div>
+    </div>
+
+    <div class="p-4 bg-slate-900/80 rounded-2xl border border-slate-700/60 space-y-2 text-xs">
+      <div class="flex justify-between text-slate-300">
+        <span>Khóa lưu trữ trình duyệt:</span>
+        <span class="font-mono text-emerald-400 font-bold">haha_os_master_database_v1</span>
+      </div>
+      <div class="flex justify-between text-slate-300">
+        <span>Trạng thái dữ liệu hiện tại:</span>
+        <span id="storage-status" class="font-bold text-amber-400">Đang quét...</span>
+      </div>
+      <div class="flex justify-between text-slate-300">
+        <span>Tổng dung lượng:</span>
+        <span id="storage-size" class="font-mono text-slate-300">--</span>
+      </div>
+    </div>
+
+    <div id="stats-container" class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-[11px] text-slate-300 hidden">
+      <div class="bg-slate-900/50 p-2.5 rounded-xl border border-slate-700">Khách hàng: <b id="cnt-customers" class="text-emerald-400">0</b></div>
+      <div class="bg-slate-900/50 p-2.5 rounded-xl border border-slate-700">Đơn tour: <b id="cnt-bookings" class="text-emerald-400">0</b></div>
+      <div class="bg-slate-900/50 p-2.5 rounded-xl border border-slate-700">Báo giá: <b id="cnt-quotes" class="text-emerald-400">0</b></div>
+      <div class="bg-slate-900/50 p-2.5 rounded-xl border border-slate-700">Phiếu thu/chi: <b id="cnt-payments" class="text-emerald-400">0</b></div>
+      <div class="bg-slate-900/50 p-2.5 rounded-xl border border-slate-700">Hoa hồng: <b id="cnt-comms" class="text-emerald-400">0</b></div>
+      <div class="bg-slate-900/50 p-2.5 rounded-xl border border-slate-700">CTV & Đại lý: <b id="cnt-ctvs" class="text-emerald-400">0</b></div>
+    </div>
+
+    <div class="pt-2">
+      <button id="btn-export" onclick="downloadBackup()" class="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-extrabold rounded-2xl shadow-lg transition-all active:scale-95 flex items-center justify-center space-x-2 text-sm">
+        <span>📥</span>
+        <span>Tải Tệp Sao Lưu JSON Về Máy Tính</span>
+      </button>
+    </div>
+
+    <p class="text-[11px] text-slate-400 text-center">
+      🛡️ Công cụ này chỉ đọc dữ liệu từ trình duyệt của bạn, hoàn toàn <b>không làm thay đổi hay xóa</b> bất kỳ dữ liệu nào.
+    </p>
+  </div>
+
+  <script>
+    const DB_KEY = 'haha_os_master_database_v1';
+    let cachedData = null;
+
+    function checkStorage() {
+      const raw = localStorage.getItem(DB_KEY);
+      const statusEl = document.getElementById('storage-status');
+      const sizeEl = document.getElementById('storage-size');
+      const statsEl = document.getElementById('stats-container');
+
+      if (!raw) {
+        statusEl.textContent = 'Chưa có dữ liệu cục bộ (Sẽ dùng dữ liệu mặc định)';
+        statusEl.className = 'font-bold text-amber-400';
+        sizeEl.textContent = '0 KB';
+        return;
+      }
+
+      try {
+        cachedData = JSON.parse(raw);
+        statusEl.textContent = 'Đã tìm thấy dữ liệu hợp lệ';
+        statusEl.className = 'font-bold text-emerald-400';
+        sizeEl.textContent = (raw.length / 1024).toFixed(2) + ' KB';
+
+        statsEl.classList.remove('hidden');
+        document.getElementById('cnt-customers').textContent = (cachedData.customers || []).length;
+        document.getElementById('cnt-bookings').textContent = (cachedData.bookings || []).length;
+        document.getElementById('cnt-quotes').textContent = (cachedData.quotations || []).length;
+        document.getElementById('cnt-payments').textContent = (cachedData.payments || []).length;
+        document.getElementById('cnt-comms').textContent = (cachedData.commissions || []).length;
+        document.getElementById('cnt-ctvs').textContent = (cachedData.ctvs || []).length;
+      } catch (e) {
+        statusEl.textContent = 'Dữ liệu bị lỗi định dạng';
+        statusEl.className = 'font-bold text-rose-400';
+      }
+    }
+
+    function downloadBackup() {
+      const raw = localStorage.getItem(DB_KEY);
+      if (!raw) {
+        alert("⚠️ Không tìm thấy dữ liệu trong trình duyệt này! Hãy mở tệp này trên cùng trình duyệt bạn thường dùng để đăng nhập hệ thống HaHa.");
+        return;
+      }
+
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const blob = new Blob([raw], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `haha_master_backup_baseline_${timestamp}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      alert("🎉 ĐÃ XUẤT TỆP SAO LƯU GỐC THÀNH CÔNG!\n\nTên tệp: haha_master_backup_baseline_" + timestamp + ".json\nHãy lưu trữ tệp này an toàn trên máy tính.");
+    }
+
+    window.onload = checkStorage;
+  </script>
+</body>
+</html>

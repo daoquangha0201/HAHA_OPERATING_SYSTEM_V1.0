@@ -15758,12 +15758,7 @@ function setupClickOutsideDismissal() {
     'change-password-modal': () => typeof closeChangePasswordModal === 'function' && closeChangePasswordModal(),
     'ctv-submit-lead-modal': () => typeof closeCtvSubmitLeadModal === 'function' && closeCtvSubmitLeadModal(),
     'ctv-close-tour-modal': () => typeof closeCtvCloseTourModal === 'function' && closeCtvCloseTourModal(),
-    'ai-agent-modal': () => window.HahaAI && typeof window.HahaAI.closeModal === 'function' && window.HahaAI.closeModal(),
-    'ai-connector-config-modal': () => window.HahaAiConnector && typeof window.HahaAiConnector.closeConfigModal === 'function' && window.HahaAiConnector.closeConfigModal(),
-    'ai-regression-results-modal': () => {
-      const rm = document.getElementById('ai-regression-results-modal');
-      if (rm) rm.remove();
-    }
+    'ai-agent-modal': () => window.HahaAI && typeof window.HahaAI.closeModal === 'function' && window.HahaAI.closeModal()
   };
 
   let mouseDownTarget = null;
