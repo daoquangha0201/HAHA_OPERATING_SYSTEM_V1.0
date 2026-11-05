@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
@@ -780,6 +780,9 @@
               💬 Trao Đổi & Yêu Cầu Sale Hướng Dẫn
               <span id="ctv-support-unread-badge" class="hidden ml-1 px-1.5 py-0.2 bg-amber-500 text-slate-900 rounded-full text-[10px] font-extrabold">1</span>
             </button>
+            <button class="ctv-tab-btn bg-indigo-50 text-indigo-700 font-extrabold border border-indigo-200" onclick="switchCtvTab('social')" id="ctv-tab-social-btn">
+              &#128640; HAHA AI Social Hub <span class="ml-1 px-1.5 py-0.5 bg-indigo-600 text-white rounded-full text-[9px] font-black uppercase animate-pulse">AI</span>
+            </button>
           </div>
 
           <!-- TAB 1: BẢNG KHÁCH HÀNG & TIẾN ĐỘ -->
@@ -1116,6 +1119,11 @@
                 </div>
               </div>
             </div>
+          </div>
+
+          <!-- TAB 6: HAHA AI SOCIAL HUB FOR CTV -->
+          <div id="ctv-tab-social-content" class="hidden space-y-6">
+            <!-- Dynamic Social Hub for CTV rendered by window.HahaSocialHub.renderCtvSocialTab() -->
           </div>
         </div>
 
@@ -1487,6 +1495,10 @@
             <button id="mod3-tab-kpi-btn" onclick="switchMod3Tab('kpi')" class="px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-2 transition-all">
               <span>🎯 4. KPI Đội Sale &amp; Hoa Hồng Doanh Số CTV</span>
               <span id="mod3-kpi-rate-badge" class="px-2 py-0.5 text-[10px] rounded-full bg-emerald-100 text-emerald-800 font-extrabold">0% KPI</span>
+            </button>
+            <button id="mod3-tab-social-btn" onclick="switchMod3Tab('social')" class="px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-indigo-600 hover:text-indigo-800 flex items-center space-x-2 transition-all">
+              <span>&#128640; 5. AI Social Hub Manager</span>
+              <span class="px-1.5 py-0.5 text-[9px] rounded-full bg-indigo-100 text-indigo-800 font-black">AI</span>
             </button>
           </div>
 
@@ -2409,6 +2421,11 @@
                 </div>
               </div>
             </div>
+          </div>
+
+          <!-- SUB-TAB 5: HAHA AI SOCIAL HUB MANAGER -->
+          <div id="mod3-tab-social-content" class="hidden space-y-6">
+            <!-- Dynamic Social Hub Admin rendered by window.HahaSocialHub.renderAdminSocialHub() -->
           </div>
 
           <!-- ========================================== -->
@@ -7001,6 +7018,7 @@
 
   <script src="app.js?v=2.0.3"></script>
   <script src="ai-agent-engine.js?v=2.1.0"></script>
+  <script src="ai-social-hub.js?v=2.1.0"></script>
   <script>
     if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
       window.addEventListener('load', function() {

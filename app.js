@@ -1,4 +1,4 @@
-/**
+﻿/**
  * HAHA OPERATING SYSTEM V1.0
  * Hệ thống Quản trị Doanh nghiệp Du lịch Hợp nhất - HaHa Eco Travel ERP
  * CHUẨN NGHIỆP VỤ HOA HỒNG:
@@ -4985,6 +4985,16 @@ function migrateDatabaseIfNeeded() {
   }
 
   // 11. Đồng bộ toàn vẹn số liệu tài chính hệ thống
+  // 10e. HAHA AI SOCIAL HUB DATA INITIALIZATION
+  if (window.HahaSocialHub && typeof window.HahaSocialHub.initData === 'function') {
+    if (window.HahaSocialHub.initData()) changed = true;
+  } else {
+    if (!db.socialAccounts) { db.socialAccounts = []; changed = true; }
+    if (!db.socialCampaigns) { db.socialCampaigns = []; changed = true; }
+    if (!db.socialPosts) { db.socialPosts = []; changed = true; }
+    if (!db.socialLeads) { db.socialLeads = []; changed = true; }
+  }
+
   syncAllFinancialData();
   changed = true;
 
@@ -6173,6 +6183,11 @@ function renderCtvPortal() {
 
   // Tab 5: Cổng Trao Đổi Hướng Dẫn & Sale Phụ Trách
   renderCtvSupportTab();
+
+  // Tab 6: HAHA AI Social Hub (neu dang o tab social)
+  if (currentCtvTab === 'social' && window.HahaSocialHub && typeof window.HahaSocialHub.renderCtvSocialTab === 'function') {
+    window.HahaSocialHub.renderCtvSocialTab();
+  }
 }
 
 function renderCtvBookingsTable(bookings) {
@@ -6827,15 +6842,17 @@ function switchCtvTab(tab) {
   const commBtn = document.getElementById('ctv-tab-commissions-btn');
   const polBtn = document.getElementById('ctv-tab-policies-btn');
   const supBtn = document.getElementById('ctv-tab-support-btn');
+  const socBtn = document.getElementById('ctv-tab-social-btn');
 
   const custContent = document.getElementById('ctv-tab-customers-content');
   const bookContent = document.getElementById('ctv-tab-bookings-content');
   const commContent = document.getElementById('ctv-tab-commissions-content');
   const polContent = document.getElementById('ctv-tab-policies-content');
   const supContent = document.getElementById('ctv-tab-support-content');
+  const socContent = document.getElementById('ctv-tab-social-content');
 
-  [custBtn, bookBtn, commBtn, polBtn, supBtn].forEach(b => b && b.classList.remove('active'));
-  [custContent, bookContent, commContent, polContent, supContent].forEach(c => c && c.classList.add('hidden'));
+  [custBtn, bookBtn, commBtn, polBtn, supBtn, socBtn].forEach(b => b && b.classList.remove('active'));
+  [custContent, bookContent, commContent, polContent, supContent, socContent].forEach(c => c && c.classList.add('hidden'));
 
   if (tab === 'customers' && custBtn && custContent) {
     custBtn.classList.add('active');
@@ -6863,6 +6880,12 @@ function switchCtvTab(tab) {
       saveDatabase();
     }
     renderCtvSupportTab();
+  } else if (tab === 'social' && socBtn && socContent) {
+    socBtn.classList.add('active');
+    socContent.classList.remove('hidden');
+    if (window.HahaSocialHub && typeof window.HahaSocialHub.renderCtvSocialTab === 'function') {
+      window.HahaSocialHub.renderCtvSocialTab();
+    }
   }
 }
 
@@ -7331,20 +7354,22 @@ function switchMod3Tab(tabName) {
   const supBtn = document.getElementById('mod3-tab-support-btn');
   const dorBtn = document.getElementById('mod3-tab-dormant-btn');
   const kpiBtn = document.getElementById('mod3-tab-kpi-btn');
+  const socBtn = document.getElementById('mod3-tab-social-btn');
 
   const dirContent = document.getElementById('mod3-tab-directory-content');
   const supContent = document.getElementById('mod3-tab-support-content');
   const dorContent = document.getElementById('mod3-tab-dormant-content');
   const kpiContent = document.getElementById('mod3-tab-kpi-content');
+  const socContent = document.getElementById('mod3-tab-social-content');
 
-  [dirBtn, supBtn, dorBtn, kpiBtn].forEach(b => {
+  [dirBtn, supBtn, dorBtn, kpiBtn, socBtn].forEach(b => {
     if (b) {
-      b.classList.remove('border-brand-600', 'text-brand-700', 'font-bold');
+      b.classList.remove('border-brand-600', 'text-brand-700', 'font-bold', 'border-indigo-600', 'text-indigo-800');
       b.classList.add('border-transparent', 'text-slate-500', 'font-semibold');
     }
   });
 
-  [dirContent, supContent, dorContent, kpiContent].forEach(c => {
+  [dirContent, supContent, dorContent, kpiContent, socContent].forEach(c => {
     if (c) c.classList.add('hidden');
   });
 
@@ -7377,6 +7402,15 @@ function switchMod3Tab(tabName) {
     if (kpiContent) kpiContent.classList.remove('hidden');
     const targetSale = (currentUser && currentUser.role === 'SALE') ? currentUser.id : selectedKpiSaleId;
     renderSaleKpiAndCommissionModule(targetSale);
+  } else if (tabName === 'social') {
+    if (socBtn) {
+      socBtn.classList.remove('border-transparent', 'text-slate-500', 'font-semibold');
+      socBtn.classList.add('border-indigo-600', 'text-indigo-800', 'font-bold');
+    }
+    if (socContent) socContent.classList.remove('hidden');
+    if (window.HahaSocialHub && typeof window.HahaSocialHub.renderAdminSocialHub === 'function') {
+      window.HahaSocialHub.renderAdminSocialHub();
+    }
   }
 }
 
