@@ -549,6 +549,11 @@
               </button>
 
             <!-- NÚT CLOUD SYNC -->
+            <!-- NUT LAM SACH DU LIEU (CLEAN SLATE TESTING MODE) -->
+            <button onclick="if(confirm('Ban co chac chan muon XOA HET du lieu khach hang, don hang, bao gia, thu chi de bat dau giao dien trang thu nghiem khong?\n(Cac tai khoan, Danh muc Tour, CTV, Nha cung cap van duoc giu nguyen).')) window.resetToCleanSlate()" title="Lam sach toan bo du lieu thu - Giao dien trang" class="p-1.5 sm:px-2.5 sm:py-1.5 text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-300 rounded-xl transition-all shadow-xs flex items-center space-x-1 active:scale-95">
+              <span>&#129529;</span>
+              <span class="hidden xl:inline font-bold">Xoa Thu Nghiem</span>
+            </button>
             <button onclick="openBackupRestoreModal()" id="cloud-sync-status-btn" title="Đồng bộ Đám mây Thời gian thực" class="p-1.5 sm:px-2.5 sm:py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl transition-colors flex items-center space-x-1">
               <span id="cloud-sync-dot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
               <span class="hidden md:inline text-[11px] font-bold" id="cloud-sync-text">Cloud Sync</span>
