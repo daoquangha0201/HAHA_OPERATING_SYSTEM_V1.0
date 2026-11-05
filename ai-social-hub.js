@@ -1047,7 +1047,7 @@ ${escapeHtml(v.body)}
                     <span>${meta.icon}</span>
                     <span>Truc tiep tu ${meta.name} (${res.model} \u2022 ${res.latencyMs}ms)</span>
                   </span>
-                  <button type="button" onclick="window.HahaSocialHub.copyRawLlmText()" class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 shadow-xs">
+                  <div class="flex items-center space-x-2"><button type="button" onclick="window.HahaSocialHub.closeLlmOutput()" class="px-2.5 py-1.5 bg-white hover:bg-rose-50 text-rose-600 font-bold text-xs rounded-xl border border-rose-200 shadow-xs" title="ÄÃ³ng tÃ¡c vá»¥ káº¿t quáº£ AI">âœ• ÄÃ³ng tÃ¡c vá»¥</button><button type="button" onclick="window.HahaSocialHub.copyRawLlmText()" class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 shadow-xs">
                     \uD83D\uDCCB Sao chep toan bo ket qua AI
                   </button>
                 </div>
@@ -1061,6 +1061,14 @@ ${escapeHtml(v.body)}
         alert("Loi API AI: " + err.message);
         if (statusEl) statusEl.innerHTML = `<span class="text-rose-600 font-bold">\u2715 Loi: ${err.message}</span>`;
       }
+    },
+
+    closeLlmOutput: function() {
+      if (typeof this.renderVariantCards === 'function') {
+        this.renderVariantCards();
+      }
+      const statusEl = document.getElementById("hub-llm-generate-status");
+      if (statusEl) statusEl.innerHTML = "";
     },
 
     copyRawLlmText: function() {

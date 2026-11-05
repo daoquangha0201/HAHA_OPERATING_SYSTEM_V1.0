@@ -123,7 +123,7 @@
       const modal = document.getElementById('ai-agent-modal');
       if (modal) {
         modal.classList.remove('hidden');
-        modal.classList.add('flex');
+        modal.classList.add('flex'); modal.style.display = 'flex';
         this.renderAgentTabs();
         this.renderAgentInfo();
         this.focusInput();
@@ -134,7 +134,7 @@
       const modal = document.getElementById('ai-agent-modal');
       if (modal) {
         modal.classList.add('hidden');
-        modal.classList.remove('flex');
+        modal.classList.remove('flex'); modal.style.display = 'none';
       }
     },
 
@@ -260,7 +260,7 @@
                 <span class="text-[10px] text-amber-700 font-bold flex items-center space-x-1">
                   <span>🛡️ Chốt chặn an toàn: Cần bạn phê duyệt</span>
                 </span>
-                <button type="button" onclick="window.HahaAI.executeHitlAction(${idx})" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[11px] rounded-xl shadow-xs transition-all active:scale-95 flex items-center space-x-1">
+                <div class="flex items-center space-x-2"><button type="button" onclick="window.HahaAI.dismissHitlAction(${idx})" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-[11px] rounded-xl transition-all" title="Há»§y bá» / ÄÃ³ng tÃ¡c vá»¥">âœ• ÄÃ³ng tÃ¡c vá»¥</button><button type="button" onclick="window.HahaAI.executeHitlAction(${idx})" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[11px] rounded-xl shadow-xs transition-all active:scale-95 flex items-center space-x-1">
                   <span>✍️ Phê Duyệt & Thực Thi</span>
                 </button>
               </div>
@@ -566,22 +566,30 @@ Hệ thống AI đa nhiệm đã sẵn sàng hỗ trợ bạn theo từng nghi�
           this.closeModal();
           openCreateInvoiceModal(act.bookingCode);
           if (typeof recordAuditLog === 'function') {
-            recordAuditLog('AI ACTION PHÊ DUYỆT', `Người dùng duyệt lệnh AI Kế toán mở bản thể hiện hóa đơn VAT cho đơn ${act.bookingCode}.`);
+            recordAuditLog('AI ACTION PHÃŠ DUYá»†T', `NgÆ°á»i dÃ¹ng duyá»‡t lá»‡nh AI Káº¿ toÃ¡n má»Ÿ báº£n thá»ƒ hiá»‡n hÃ³a Ä‘Æ¡n VAT cho Ä‘Æ¡n ${act.bookingCode}.`);
           }
         }
       } else if (act.type === 'CREATE_QUOTATION') {
         if (typeof switchModule === 'function') {
           this.closeModal();
-          switchModule(4); // Mở Phân hệ 4: Báo giá & Đơn tour
+          switchModule(4); // Má»Ÿ PhÃ¢n há»‡ 4: BÃ¡o giÃ¡ & ÄÆ¡n tour
           if (typeof switchMod4Tab === 'function') switchMod4Tab('quotations');
-          alert(`🎉 ĐÃ CHUYỂN DỮ LIỆU BÁO GIÁ THÀNH CÔNG!\n\nAI Kinh doanh đã đưa thông số sang Phân hệ Báo giá:\n- Đơn giá: ${formatVND(act.unitPrice)}\n- Số khách: ${act.pax}\n- Tổng tiền: ${formatVND(act.totalAmount)}`);
+          alert(`ðŸŽ‰ ÄÃƒ CHUYá»‚N Dá»® LIá»†U BÃO GIÃ THÃ€NH CÃ”NG!\n\nAI Kinh doanh Ä‘Ã£ Ä‘Æ°a thÃ´ng sá»‘ sang PhÃ¢n há»‡ BÃ¡o giÃ¡:\n- ÄÆ¡n giÃ¡: ${formatVND(act.unitPrice)}\n- Sá»‘ khÃ¡ch: ${act.pax}\n- Tá»•ng tiá»n: ${formatVND(act.totalAmount)}`);
         }
       } else if (act.type === 'CREATE_OPS_VOUCHERS') {
         if (typeof switchModule === 'function') {
           this.closeModal();
-          switchModule(5); // Mở Phân hệ 5: Điều hành tour
-          alert(`🎉 ĐÃ XÁC NHẬN ĐIỀU PHỐI TOUR!\n\nLệnh điều hành cho đơn ${act.bookingCode} đã được bàn giao sang Phân hệ Điều hành & NCC.`);
+          switchModule(5); // Má»Ÿ PhÃ¢n há»‡ 5: Äiá»u hÃ nh tour
+          alert(`ðŸŽ‰ ÄÃƒ XÃC NHáº¬N ÄIá»€U PHá»I TOUR!\n\nLá»‡nh Ä‘iá»u hÃ nh cho Ä‘Æ¡n ${act.bookingCode} Ä‘Ã£ Ä‘Æ°á»£c bÃ n giao sang PhÃ¢n há»‡ Äiá»u hÃ nh & NCC.`);
         }
+      }
+    },
+
+    dismissHitlAction: function(msgIndex) {
+      if (this.chatHistory && this.chatHistory[msgIndex]) {
+        this.chatHistory[msgIndex].action = null;
+        this.renderChatMessages();
+        this.addSystemMessage('ÄÃ£ Ä‘Ã³ng vÃ  há»§y bá» tÃ¡c vá»¥ Ä‘á» xuáº¥t.');
       }
     },
 
@@ -768,7 +776,7 @@ Hệ thống AI đa nhiệm đã sẵn sàng hỗ trợ bạn theo từng nghi�
       const passedCount = results.filter(r => r.pass).length;
 
       const html = `
-        <div id="ai-regression-results-modal" class="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+        <div id="ai-regression-results-modal" onclick="if(event.target === this) this.remove()" class="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
           <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[92vh] overflow-y-auto border border-slate-200 my-auto animate-in fade-in zoom-in-95 duration-150">
             <div class="px-6 py-4 ${allPassed ? 'bg-gradient-to-r from-emerald-700 to-teal-800' : 'bg-gradient-to-r from-rose-700 to-red-800'} text-white flex items-center justify-between">
               <div class="flex items-center space-x-3">

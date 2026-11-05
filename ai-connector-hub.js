@@ -1,4 +1,4 @@
-/**
+﻿/**
  * HAHA ECO TRAVEL OPERATING SYSTEM - UNIVERSAL AI CONNECTOR & MODEL GATEWAY
  * Phiên bản: 2.1 (Tích hợp Google Gemini, OpenAI ChatGPT, Anthropic Claude, ElevenLabs, n8n)
  * 
@@ -583,17 +583,28 @@ Tôi đã tiếp nhận và phân tích yêu cầu của bạn: *" ${prompt} "*
       if (!modal) {
         modal = document.createElement('div');
         modal.id = 'ai-connector-config-modal';
-        modal.className = 'fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/70 backdrop-blur-xs p-3 overflow-y-auto animate-fade-in';
+        modal.className = 'fixed inset-0 z-[100] items-center justify-center bg-slate-900/70 backdrop-blur-xs p-3 overflow-y-auto animate-fade-in';
+        modal.onclick = function(e) {
+          if (e.target === modal) {
+            window.HahaAiConnector.closeConfigModal();
+          }
+        };
         document.body.appendChild(modal);
       }
 
       modal.innerHTML = this.renderModalHtml();
       modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      modal.style.display = 'flex';
     },
 
     closeConfigModal: function() {
       const modal = document.getElementById('ai-connector-config-modal');
-      if (modal) modal.classList.add('hidden');
+      if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        modal.style.display = 'none';
+      }
     },
 
     renderModalHtml: function() {
