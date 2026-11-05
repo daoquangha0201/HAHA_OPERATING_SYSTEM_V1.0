@@ -260,7 +260,7 @@
                 <span class="text-[10px] text-amber-700 font-bold flex items-center space-x-1">
                   <span>🛡️ Chốt chặn an toàn: Cần bạn phê duyệt</span>
                 </span>
-                <div class="flex items-center space-x-2"><button type="button" onclick="window.HahaAI.dismissHitlAction(${idx})" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-[11px] rounded-xl transition-all" title="Há»§y bá» / ÄÃ³ng tÃ¡c vá»¥">âœ• ÄÃ³ng tÃ¡c vá»¥</button><button type="button" onclick="window.HahaAI.executeHitlAction(${idx})" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[11px] rounded-xl shadow-xs transition-all active:scale-95 flex items-center space-x-1">
+                <div class="flex items-center space-x-2"><button type="button" onclick="window.HahaAI.dismissHitlAction(${idx})" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-[11px] rounded-xl transition-all" title="H\u1ee7y b\u1ecf / \u0110\u00f3ng t\u00e1c v\u1ee5">\u2715 \u0110\u00f3ng t\u00e1c v\u1ee5</button><button type="button" onclick="window.HahaAI.executeHitlAction(${idx})" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[11px] rounded-xl shadow-xs transition-all active:scale-95 flex items-center space-x-1">
                   <span>✍️ Phê Duyệt & Thực Thi</span>
                 </button>
               </div>
@@ -566,30 +566,30 @@ Hệ thống AI đa nhiệm đã sẵn sàng hỗ trợ bạn theo từng nghi�
           this.closeModal();
           openCreateInvoiceModal(act.bookingCode);
           if (typeof recordAuditLog === 'function') {
-            recordAuditLog('AI ACTION PHÃŠ DUYá»†T', `NgÆ°á»i dÃ¹ng duyá»‡t lá»‡nh AI Káº¿ toÃ¡n má»Ÿ báº£n thá»ƒ hiá»‡n hÃ³a Ä‘Æ¡n VAT cho Ä‘Æ¡n ${act.bookingCode}.`);
+            recordAuditLog('AI ACTION PH\u00ca DUY\u1ec6T', `Ng\u01b0\u1eddi d\u00f9ng duy\u1ec7t l\u1ec7nh AI K\u1ebf to\u00e1n m\u1edf b\u1ea3n th\u1ec3 hi\u1ec7n h\u00f3a \u0111\u01a1n VAT cho \u0111\u01a1n ${act.bookingCode}.`);
           }
         }
       } else if (act.type === 'CREATE_QUOTATION') {
         if (typeof switchModule === 'function') {
           this.closeModal();
-          switchModule(4); // Má»Ÿ PhÃ¢n há»‡ 4: BÃ¡o giÃ¡ & ÄÆ¡n tour
+          switchModule(4); // M\u1edf Ph\u00e2n h\u1ec7 4: B\u00e1o gi\u00e1 & \u0110\u01a1n tour
           if (typeof switchMod4Tab === 'function') switchMod4Tab('quotations');
-          alert(`ðŸŽ‰ ÄÃƒ CHUYá»‚N Dá»® LIá»†U BÃO GIÃ THÃ€NH CÃ”NG!\n\nAI Kinh doanh Ä‘Ã£ Ä‘Æ°a thÃ´ng sá»‘ sang PhÃ¢n há»‡ BÃ¡o giÃ¡:\n- ÄÆ¡n giÃ¡: ${formatVND(act.unitPrice)}\n- Sá»‘ khÃ¡ch: ${act.pax}\n- Tá»•ng tiá»n: ${formatVND(act.totalAmount)}`);
+          alert(`\ud83c\udf89 \u0110\u00c3 CHUY\u1ec2N D\u1eee LI\u1ec6U B\u00c1O GI\u00c1 TH\u00c0NH C\u00d4NG!\n\nAI Kinh doanh \u0111\u00e3 \u0111\u01b0a th\u00f4ng s\u1ed1 sang Ph\u00e2n h\u1ec7 B\u00e1o gi\u00e1:\n- \u0110\u01a1n gi\u00e1: ${formatVND(act.unitPrice)}\n- S\u1ed1 kh\u00e1ch: ${act.pax}\n- T\u1ed5ng ti\u1ec1n: ${formatVND(act.totalAmount)}`);
         }
       } else if (act.type === 'CREATE_OPS_VOUCHERS') {
         if (typeof switchModule === 'function') {
           this.closeModal();
-          switchModule(5); // Má»Ÿ PhÃ¢n há»‡ 5: Äiá»u hÃ nh tour
-          alert(`ðŸŽ‰ ÄÃƒ XÃC NHáº¬N ÄIá»€U PHá»I TOUR!\n\nLá»‡nh Ä‘iá»u hÃ nh cho Ä‘Æ¡n ${act.bookingCode} Ä‘Ã£ Ä‘Æ°á»£c bÃ n giao sang PhÃ¢n há»‡ Äiá»u hÃ nh & NCC.`);
+          switchModule(5); // M\u1edf Ph\u00e2n h\u1ec7 5: \u0110i\u1ec1u h\u00e0nh tour
+          alert(`\ud83c\udf89 \u0110\u00c3 X\u00c1C NH\u1eacN \u0110I\u1ec0U PH\u1ed0I TOUR!\n\nL\u1ec7nh \u0111i\u1ec1u h\u00e0nh cho \u0111\u01a1n ${act.bookingCode} \u0111\u00e3 \u0111\u01b0\u1ee3c b\u00e0n giao sang Ph\u00e2n h\u1ec7 \u0110i\u1ec1u h\u00e0nh & NCC.`);
         }
       }
     },
 
-    dismissHitlAction: function(msgIndex) {
+                <div class="flex items-center space-x-2"><button type="button" onclick="window.HahaAI.dismissHitlAction(${idx})" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-[11px] rounded-xl transition-all" title="H\u1ee7y b\u1ecf / \u0110\u00f3ng t\u00e1c v\u1ee5">\u2715 \u0110\u00f3ng t\u00e1c v\u1ee5</button><button type="button" onclick="window.HahaAI.executeHitlAction(${idx})" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[11px] rounded-xl shadow-xs transition-all active:scale-95 flex items-center space-x-1">
       if (this.chatHistory && this.chatHistory[msgIndex]) {
         this.chatHistory[msgIndex].action = null;
         this.renderChatMessages();
-        this.addSystemMessage('ÄÃ£ Ä‘Ã³ng vÃ  há»§y bá» tÃ¡c vá»¥ Ä‘á» xuáº¥t.');
+        this.addSystemMessage('\u0110\u00e3 \u0111\u00f3ng v\u00e0 h\u1ee7y b\u1ecf t\u00e1c v\u1ee5 \u0111\u1ec1 xu\u1ea5t.');
       }
     },
 

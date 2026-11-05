@@ -1025,7 +1025,7 @@ ${escapeHtml(v.body)}
       const ctv = (db.ctvs || []).find(c => c.id === (currentUser ? currentUser.ctvId : "CTV-001")) || (db.ctvs || [])[0] || { id: "CTV-001", refCode: "HAHA-YEN88", name: "Hoang Yen" };
       const refUrl = `https://daoquangha0201.github.io/HAHA-ECO-TRAVEL/storefront.html?ref=${ctv.id}&camp=${camp.code}`;
 
-      if (!window.HahaAiConnector) { alert('Lá»—i: Há»‡ thá»‘ng AI Connector Hub chÆ°a sáºµn sÃ ng.'); return; }
+      if (!window.HahaAiConnector) { alert('L\u1ed7i: H\u1ec7 th\u1ed1ng AI Connector Hub ch\u01b0a s\u1eb5n s\u00e0ng.'); return; }
 
       const provider = window.HahaAiConnector.config.activeProvider;
       const meta = window.HahaAiConnector.getMetadata(provider);
@@ -1047,7 +1047,7 @@ ${escapeHtml(v.body)}
                     <span>${meta.icon}</span>
                     <span>Truc tiep tu ${meta.name} (${res.model} \u2022 ${res.latencyMs}ms)</span>
                   </span>
-                  <div class="flex items-center space-x-2"><button type="button" onclick="window.HahaSocialHub.closeLlmOutput()" class="px-2.5 py-1.5 bg-white hover:bg-rose-50 text-rose-600 font-bold text-xs rounded-xl border border-rose-200 shadow-xs" title="ÄÃ³ng tÃ¡c vá»¥ káº¿t quáº£ AI">âœ• ÄÃ³ng tÃ¡c vá»¥</button><button type="button" onclick="window.HahaSocialHub.copyRawLlmText()" class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 shadow-xs">
+                  <div class="flex items-center space-x-2"><button type="button" onclick="window.HahaSocialHub.closeLlmOutput()" class="px-2.5 py-1.5 bg-white hover:bg-rose-50 text-rose-600 font-bold text-xs rounded-xl border border-rose-200 shadow-xs" title="\u0110\u00f3ng t\u00e1c v\u1ee5 k\u1ebft qu\u1ea3 AI">\u2715 \u0110\u00f3ng t\u00e1c v\u1ee5</button><button type="button" onclick="window.HahaSocialHub.copyRawLlmText()" class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 shadow-xs">
                     \uD83D\uDCCB Sao chep toan bo ket qua AI
                   </button>
                 </div>
