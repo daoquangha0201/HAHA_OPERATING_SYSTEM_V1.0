@@ -882,7 +882,7 @@ const ROLE_PERMISSIONS = {
   'KE_TOAN': [6, 7],                  // Tài chính & Sổ quỹ thu chi, Đối soát hoa hồng CTV & Duyệt lệnh NCC (Tuyệt đối không can thiệp CRM/Báo giá/Điều hành)
   'CTV': [10],                        // Cổng thông tin đối tác CTV
   'SUPPLIER': [11],
-  'MARKETING': [1, 2, 8, 10, 12]       // Ph\u00f2ng Marketing L\u1eef h\u00e0nh & \u0110i\u1ec1u ph\u1ed1i MXH CTV                    // Cổng quản trị đối tác cung ứng riêng biệt
+  'MARKETING': [12, 1, 2, 8]       // Ph\u00f2ng Marketing L\u1eef h\u00e0nh & \u0110i\u1ec1u ph\u1ed1i MXH CTV                    // Cổng quản trị đối tác cung ứng riêng biệt
 };
 
 // ==========================================
@@ -2206,7 +2206,8 @@ function filterStaffDept(dept) {
     'CEO': document.getElementById('btn-dept-ceo'),
     'SALE': document.getElementById('btn-dept-sale'),
     'OPS': document.getElementById('btn-dept-ops'),
-    'KE_TOAN': document.getElementById('btn-dept-ketoan')
+    'KE_TOAN': document.getElementById('btn-dept-ketoan'),
+    'MARKETING': document.getElementById('btn-dept-marketing')
   };
 
   const badge = document.getElementById('staff-dept-active-badge');
@@ -2215,7 +2216,7 @@ function filterStaffDept(dept) {
   const input = document.getElementById('login-username');
   const passInput = document.getElementById('login-password');
 
-  // Đặt lại style tất cả các nút
+  // \u0110\u1eb7t l\u1ea1i style t\u1ea5t c\u1ea3 c\u00e1c n\u00fat
   Object.keys(btns).forEach(k => {
     if (btns[k]) {
       btns[k].className = 'py-1.5 rounded-lg text-slate-500 hover:text-slate-900 transition-all';
@@ -2226,78 +2227,98 @@ function filterStaffDept(dept) {
     btns[currentSelectedDept].className = 'py-1.5 rounded-lg bg-white text-slate-900 shadow-xs border border-slate-200 font-extrabold transition-all';
   }
 
-  // Điều chỉnh hiển thị thẻ Quick Login tương ứng
+  // \u0110i\u1ec1u ch\u1ec9nh hi\u1ec3n th\u1ecb th\u1ebb Quick Login t\u01b0\u01a1ng \u1ee9ng
   const cardCeo = document.getElementById('quick-login-card-ceo');
   const cardSale = document.getElementById('quick-login-card-sale');
   const cardOps = document.getElementById('quick-login-card-ops');
   const cardKetoan = document.getElementById('quick-login-card-ketoan');
+  const cardMarketing = document.getElementById('quick-login-card-marketing');
 
   if (currentSelectedDept === 'CEO') {
-    if (badge) { badge.textContent = "Ban Giám Đốc"; badge.className = "text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200"; }
-    if (title) title.textContent = "CỔNG BAN GIÁM ĐỐC (CEO)";
-    if (label) label.textContent = "Tài khoản Giám Đốc";
+    if (badge) { badge.textContent = "Ban Gi\u00e1m \u0110\u1ed1c"; badge.className = "text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200"; }
+    if (title) title.textContent = "C\u1ed4NG BAN GI\u00c1M \u0110\u1ed0C (CEO)";
+    if (label) label.textContent = "T\u00e0i kho\u1ea3n Gi\u00e1m \u0110\u1ed1c";
     if (input) {
       input.value = "ceo";
-      input.placeholder = "Nhập tài khoản Giám Đốc (ceo)";
+      input.placeholder = "Nh\u1eadp t\u00e0i kho\u1ea3n Gi\u00e1m \u0110\u1ed1c (ceo)";
     }
     if (passInput) passInput.value = "123456";
     if (cardCeo) cardCeo.classList.remove('hidden');
     if (cardSale) cardSale.classList.add('hidden');
     if (cardOps) cardOps.classList.add('hidden');
     if (cardKetoan) cardKetoan.classList.add('hidden');
+    if (cardMarketing) cardMarketing.classList.add('hidden');
   } else if (currentSelectedDept === 'SALE') {
-    if (badge) { badge.textContent = "Phòng Sales"; badge.className = "text-[10px] font-bold text-blue-800 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200"; }
-    if (title) title.textContent = "CỔNG PHÒNG KINH DOANH (SALES)";
-    if (label) label.textContent = "Tài khoản Sales";
+    if (badge) { badge.textContent = "Ph\u00f2ng Sales"; badge.className = "text-[10px] font-bold text-blue-800 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200"; }
+    if (title) title.textContent = "C\u1ed4NG PH\u00d2NG KINH DOANH (SALES)";
+    if (label) label.textContent = "T\u00e0i kho\u1ea3n Sales";
     if (input) {
       input.value = "sale01";
-      input.placeholder = "Nhập tài khoản Sales (sale01 - Nguyễn Văn An)";
+      input.placeholder = "Nh\u1eadp t\u00e0i kho\u1ea3n Sales (sale01 - Nguy\u1ec5n V\u0103n An)";
     }
     if (passInput) passInput.value = "123456";
     if (cardCeo) cardCeo.classList.add('hidden');
     if (cardSale) cardSale.classList.remove('hidden');
     if (cardOps) cardOps.classList.add('hidden');
     if (cardKetoan) cardKetoan.classList.add('hidden');
+    if (cardMarketing) cardMarketing.classList.add('hidden');
   } else if (currentSelectedDept === 'OPS') {
-    if (badge) { badge.textContent = "Phòng Điều Hành"; badge.className = "text-[10px] font-bold text-purple-800 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200"; }
-    if (title) title.textContent = "CỔNG PHÒNG ĐIỀU HÀNH TOUR (OPS)";
-    if (label) label.textContent = "Tài khoản Điều Hành Tour";
+    if (badge) { badge.textContent = "Ph\u00f2ng \u0110i\u1ec1u H\u00e0nh"; badge.className = "text-[10px] font-bold text-purple-800 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200"; }
+    if (title) title.textContent = "C\u1ed4NG PH\u00d2NG \u0110I\u1ec0U H\u00c0NH TOUR (OPS)";
+    if (label) label.textContent = "T\u00e0i kho\u1ea3n \u0110i\u1ec1u H\u00e0nh Tour";
     if (input) {
       input.value = "dieuhanh";
-      input.placeholder = "Nhập tài khoản Điều Hành (dieuhanh - Đức Huy)";
+      input.placeholder = "Nh\u1eadp t\u00e0i kho\u1ea3n \u0110i\u1ec1u H\u00e0nh (dieuhanh - \u0110\u1ee9c Huy)";
     }
     if (passInput) passInput.value = "123456";
     if (cardCeo) cardCeo.classList.add('hidden');
     if (cardSale) cardSale.classList.add('hidden');
     if (cardOps) cardOps.classList.remove('hidden');
     if (cardKetoan) cardKetoan.classList.add('hidden');
+    if (cardMarketing) cardMarketing.classList.add('hidden');
   } else if (currentSelectedDept === 'KE_TOAN') {
-    if (badge) { badge.textContent = "Phòng Kế Toán"; badge.className = "text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200"; }
-    if (title) title.textContent = "CỔNG PHÒNG KẾ TOÁN - TÀI CHÍNH";
-    if (label) label.textContent = "Tài khoản Kế Toán";
+    if (badge) { badge.textContent = "Ph\u00f2ng K\u1ebf To\u00e1n"; badge.className = "text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200"; }
+    if (title) title.textContent = "C\u1ed4NG PH\u00d2NG K\u1ebe TO\u00c1N - T\u00c0I CH\u00cdNH";
+    if (label) label.textContent = "T\u00e0i kho\u1ea3n K\u1ebf To\u00e1n";
     if (input) {
       input.value = "ketoan";
-      input.placeholder = "Nhập tài khoản Kế Toán (ketoan - Thị Mai)";
+      input.placeholder = "Nh\u1eadp t\u00e0i kho\u1ea3n K\u1ebf To\u00e1n (ketoan - Th\u1ecb Mai)";
     }
     if (passInput) passInput.value = "123456";
     if (cardCeo) cardCeo.classList.add('hidden');
     if (cardSale) cardSale.classList.add('hidden');
     if (cardOps) cardOps.classList.add('hidden');
     if (cardKetoan) cardKetoan.classList.remove('hidden');
+    if (cardMarketing) cardMarketing.classList.add('hidden');
+  } else if (currentSelectedDept === 'MARKETING') {
+    if (badge) { badge.textContent = "Ph\u00f2ng Marketing"; badge.className = "text-[10px] font-bold text-cyan-800 bg-cyan-50 px-2 py-0.5 rounded-full border border-cyan-200"; }
+    if (title) title.textContent = "C\u1ed4NG PH\u00d2NG MARKETING & TRUY\u1ec0N TH\u00d4NG";
+    if (label) label.textContent = "T\u00e0i kho\u1ea3n Marketing";
+    if (input) {
+      input.value = "marketing1";
+      input.placeholder = "Nh\u1eadp t\u00e0i kho\u1ea3n Marketing (marketing1 - Nguy\u1ec5n Ho\u00e0ng Nam)";
+    }
+    if (passInput) passInput.value = "123456";
+    if (cardCeo) cardCeo.classList.add('hidden');
+    if (cardSale) cardSale.classList.add('hidden');
+    if (cardOps) cardOps.classList.add('hidden');
+    if (cardKetoan) cardKetoan.classList.add('hidden');
+    if (cardMarketing) cardMarketing.classList.remove('hidden');
   } else {
     // ALL
-    if (badge) { badge.textContent = "Toàn bộ"; badge.className = "text-[10px] font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded-full border border-brand-200"; }
-    if (title) title.textContent = "CỔNG CÁN BỘ NHÂN VIÊN NỘI BỘ";
-    if (label) label.textContent = "Tài khoản nhân viên";
+    if (badge) { badge.textContent = "To\u00e0n b\u1ed9"; badge.className = "text-[10px] font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded-full border border-brand-200"; }
+    if (title) title.textContent = "C\u1ed4NG C\u00c1N B\u1ed8 NH\u00c2N VI\u00caN N\u1ed8I B\u1ed8";
+    if (label) label.textContent = "T\u00e0i kho\u1ea3n nh\u00e2n vi\u00ean";
     if (input) {
       input.value = "";
-      input.placeholder = "Nhập username nhân viên (ceo, sale01, dieuhanh, ketoan)";
+      input.placeholder = "Nh\u1eadp username nh\u00e2n vi\u00ean (ceo, sale01, dieuhanh, ketoan, marketing1)";
     }
     if (passInput) passInput.value = "";
     if (cardCeo) cardCeo.classList.remove('hidden');
     if (cardSale) cardSale.classList.remove('hidden');
     if (cardOps) cardOps.classList.remove('hidden');
     if (cardKetoan) cardKetoan.classList.remove('hidden');
+    if (cardMarketing) cardMarketing.classList.remove('hidden');
   }
 }
 
@@ -2701,69 +2722,75 @@ function applyRoleSecurity() {
   const sidebarTitle = document.getElementById('sidebar-title');
 
   if (isSupplier) {
-    if (sidebarTitle) sidebarTitle.textContent = "Khu Vực Đối Tác NCC";
+    if (sidebarTitle) sidebarTitle.textContent = "Khu V\u1ef1c \u0110\u1ed1i T\u00e1c NCC";
     if (supplierNav) {
       supplierNav.classList.remove('hidden');
       supplierNav.classList.add('active');
     }
     if (ctvNav) ctvNav.classList.add('hidden');
 
-    for (let i = 1; i <= 10; i++) {
-      const navItem = document.getElementById(`nav-mod-${i}`);
+    for (let i = 1; i <= 12; i++) {
+      if (i === 11) continue;
+      const navItem = document.getElementById(
+av-mod-2773);
       if (navItem) {
         navItem.classList.add('disabled', 'hidden');
-        navItem.title = "Dành riêng cho nhân viên nội bộ";
+        navItem.title = "D\u00e0nh ri\u00eang cho nh\u00e2n vi\u00ean n\u1ed9i b\u1ed9";
       }
     }
     return;
   }
 
   if (isCtv) {
-    if (sidebarTitle) sidebarTitle.textContent = "Khu Vực Đối Tác";
+    if (sidebarTitle) sidebarTitle.textContent = "Khu V\u1ef1c \u0110\u1ed1i T\u00e1c CTV";
     if (ctvNav) {
       ctvNav.classList.remove('hidden');
       ctvNav.classList.add('active');
     }
     if (supplierNav) supplierNav.classList.add('hidden');
 
-    for (let i = 1; i <= 9; i++) {
-      const navItem = document.getElementById(`nav-mod-${i}`);
+    for (let i = 1; i <= 12; i++) {
+      if (i === 10) continue;
+      const navItem = document.getElementById(
+av-mod-2773);
       if (navItem) {
         navItem.classList.add('disabled', 'hidden');
-        navItem.title = "Cấm truy cập: Dành riêng cho nhân viên nội bộ";
+        navItem.title = "C\u1ea5m truy c\u1eadp: D\u00e0nh ri\u00eang cho nh\u00e2n vi\u00ean n\u1ed9i b\u1ed9";
       }
     }
   } else {
     if (sidebarTitle) {
       sidebarTitle.textContent = currentUser.role === 'CEO'
-        ? "Các Phân Hệ Hợp Nhất"
-        : `Phân Hệ Chuyên Môn (${currentUser.roleTitle})`;
+        ? "C\u00e1c Ph\u00e2n H\u1ec7 H\u1ee3p Nh\u1ea5t"
+        : Ph\u00e2n H\u1ec7 Chuy\u00ean M\u00f4n ();
     }
     if (ctvNav) ctvNav.classList.add('hidden');
     if (supplierNav) {
       if (currentUser.role === 'CEO') {
         supplierNav.classList.remove('hidden', 'disabled');
-        supplierNav.title = "Cổng Đối tác Cung ứng (Giám sát)";
+        supplierNav.title = "C\u1ed5ng \u0110\u1ed1i t\u00e1c Cung \u1ee9ng (Gi\u00e1m s\u00e1t)";
       } else {
         supplierNav.classList.add('hidden');
       }
     }
 
     const allowedModules = ROLE_PERMISSIONS[currentUser.role] || [];
-    for (let i = 1; i <= 9; i++) {
-      const navItem = document.getElementById(`nav-mod-${i}`);
+    for (let i = 1; i <= 12; i++) {
+      if (i === 10 || i === 11) continue;
+      const navItem = document.getElementById(
+av-mod-2773);
       if (navItem) {
         if (allowedModules.includes(i)) {
           navItem.classList.remove('hidden', 'disabled');
-          navItem.title = "Bấm để mở phân hệ chuyên môn";
+          navItem.title = "B\u1ea5m \u0111\u1ec3 m\u1edf ph\u00e2n h\u1ec7 chuy\u00ean m\u00f4n";
         } else {
           navItem.classList.add('hidden', 'disabled');
-          navItem.title = `Tài khoản ${currentUser.roleTitle} không có thẩm quyền truy cập phân hệ này`;
+          navItem.title = T\u00e0i kho\u1ea3n  kh\u00f4ng c\u00f3 th\u1ea9m quy\u1ec1n truy c\u1eadp ph\u00e2n h\u1ec7 n\u00e0y;
         }
       }
     }
 
-    // Cập nhật tùy chọn hiển thị trên Dropdown chuyển phân hệ Di động
+    // C\u1eadp nh\u1eadt t\u00f9y ch\u1ecdn hi\u1ec3n th\u1ecb tr\u00ean Dropdown chuy\u1ec3n ph\u00e2n h\u1ec7 Di \u0111\u1ed9ng
     const opt10 = document.getElementById('opt-mobile-mod10');
     const opt11 = document.getElementById('opt-mobile-mod11');
     const opt12 = document.getElementById('opt-mobile-mod12');
