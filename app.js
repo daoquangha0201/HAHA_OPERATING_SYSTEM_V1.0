@@ -882,7 +882,7 @@ const ROLE_PERMISSIONS = {
   'KE_TOAN': [6, 7],                  // Tài chính & Sổ quỹ thu chi, Đối soát hoa hồng CTV & Duyệt lệnh NCC (Tuyệt đối không can thiệp CRM/Báo giá/Điều hành)
   'CTV': [10],                        // Cổng thông tin đối tác CTV
   'SUPPLIER': [11],
-  'MARKETING': [1, 2, 8, 10, 12]       // Ph\u00f2ng Marketing L\u1eef h\u00e0nh & \u0110i\u1ec1u ph\u1ed1i MXH CTV                    // Cổng quản trị đối tác cung ứng riêng biệt
+  'MARKETING': [12, 1, 2, 8]       // Ph\u00f2ng Marketing L\u1eef h\u00e0nh & \u0110i\u1ec1u ph\u1ed1i MXH CTV                    // Cổng quản trị đối tác cung ứng riêng biệt
 };
 
 // ==========================================
@@ -2734,7 +2734,8 @@ function applyRoleSecurity() {
 
     for (let i = 1; i <= 12; i++) {
       if (i === 11) continue;
-      const navItem = document.getElementById(`nav-mod-${i}`);
+      const navItem = document.getElementById(
+av-mod-2773);
       if (navItem) {
         navItem.classList.add('disabled', 'hidden');
         navItem.title = "D\u00e0nh ri\u00eang cho nh\u00e2n vi\u00ean n\u1ed9i b\u1ed9";
@@ -2753,7 +2754,8 @@ function applyRoleSecurity() {
 
     for (let i = 1; i <= 12; i++) {
       if (i === 10) continue;
-      const navItem = document.getElementById(`nav-mod-${i}`);
+      const navItem = document.getElementById(
+av-mod-2773);
       if (navItem) {
         navItem.classList.add('disabled', 'hidden');
         navItem.title = "C\u1ea5m truy c\u1eadp: D\u00e0nh ri\u00eang cho nh\u00e2n vi\u00ean n\u1ed9i b\u1ed9";
@@ -2763,7 +2765,7 @@ function applyRoleSecurity() {
     if (sidebarTitle) {
       sidebarTitle.textContent = currentUser.role === 'CEO'
         ? "C\u00e1c Ph\u00e2n H\u1ec7 H\u1ee3p Nh\u1ea5t"
-        : `Ph\u00e2n H\u1ec7 Chuy\u00ean M\u00f4n (${currentUser.roleTitle || currentUser.role})`;
+        : Ph\u00e2n H\u1ec7 Chuy\u00ean M\u00f4n ();
     }
     if (ctvNav) ctvNav.classList.add('hidden');
     if (supplierNav) {
@@ -2778,14 +2780,15 @@ function applyRoleSecurity() {
     const allowedModules = ROLE_PERMISSIONS[currentUser.role] || [];
     for (let i = 1; i <= 12; i++) {
       if (i === 10 || i === 11) continue;
-      const navItem = document.getElementById(`nav-mod-${i}`);
+      const navItem = document.getElementById(
+av-mod-2773);
       if (navItem) {
         if (allowedModules.includes(i)) {
           navItem.classList.remove('hidden', 'disabled');
           navItem.title = "B\u1ea5m \u0111\u1ec3 m\u1edf ph\u00e2n h\u1ec7 chuy\u00ean m\u00f4n";
         } else {
           navItem.classList.add('hidden', 'disabled');
-          navItem.title = `T\u00e0i kho\u1ea3n ${currentUser.roleTitle || currentUser.role} kh\u00f4ng c\u00f3 th\u1ea9m quy\u1ec1n truy c\u1eadp ph\u00e2n h\u1ec7 n\u00e0y`;
+          navItem.title = T\u00e0i kho\u1ea3n  kh\u00f4ng c\u00f3 th\u1ea9m quy\u1ec1n truy c\u1eadp ph\u00e2n h\u1ec7 n\u00e0y;
         }
       }
     }

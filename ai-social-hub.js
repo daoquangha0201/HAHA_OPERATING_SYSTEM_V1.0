@@ -555,14 +555,206 @@
       }
     },
 
-    ctvEditPostModal: function(postId) {
+        openEditPostModal: function(postId) {
+      const currentCtvId = (typeof currentUser !== 'undefined' && currentUser && currentUser.ctvId) ? currentUser.ctvId : 'CTV-001';
+      const ctv = (db.ctvs || []).find(c => c.id === currentCtvId) || { id: currentCtvId, name: 'C\u1ed9ng t\u00e1c vi\u00ean' };
       const post = (db.ctvPendingPosts || []).find(p => p.id === postId);
       if (!post) return;
-      const newContent = prompt("Ch\u1ec9nh s\u1eeda n\u1ed9i dung b\u00e0i vi\u1ebft theo phong c\u00e1ch ri\u00eang c\u1ee7a b\u1ea1n:", post.content);
-      if (newContent !== null && newContent.trim().length > 5) {
-        post.content = newContent.trim();
-        if (typeof saveDatabase === 'function') saveDatabase();
-        alert("\u0110\u00e3 c\u1eadp nh\u1eadt n\u1ed9i dung b\u00e0i vi\u1ebft th\u00e0nh c\u00f4ng!");
+
+      const camp = (db.socialCampaigns || []).find(c => c.id === post.campaignId) || { name: 'Chi\u1ebfn D\u1ecbch Du L\u1ecbch HaHa', tourName: 'Tour Sinh Th\u00e1i HaHa' };
+      const refUrl = `https://daoquangha0201.github.io/HAHA-ECO-TRAVEL/storefront.html?ref=${ctv.id}&camp=${post.campaignId}`;
+
+      const existing = document.getElementById('ctv-edit-post-modal');
+      if (existing) existing.remove();
+
+      const safeHeadline = (post.headline || '').replace(/"/g, '&quot;');
+      const safeHashtags = (post.hashtags || '#HaHaEcoTravel #DuLichSinhThai').replace(/"/g, '&quot;');
+
+      const modalHtml = `
+        <div id="ctv-edit-post-modal" class="fixed inset-0 z-50 bg-slate-900/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-150">
+          <div class="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[92vh] overflow-y-auto border border-slate-200 my-auto">
+            
+            <!-- HEADER MODAL -->
+            <div class="bg-gradient-to-r from-indigo-900 via-indigo-800 to-purple-900 text-white p-5 rounded-t-3xl flex items-center justify-between">
+              <div class="space-y-1">
+                <div class="flex items-center space-x-2">
+                  <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-cyan-400 text-slate-950 uppercase">Ph\u00f2ng Marketing \u2192 ${ctv.name}</span>
+                  <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white/20 text-white">${post.platform}</span>
+                </div>
+                <h3 class="text-base sm:text-lg font-extrabold tracking-tight">\u270F\uFE0F Ch\u1ec9nh S\u1eeda B\u00e0i Vi\u1ebft Theo Phong C\u00e1ch Ri\u00eang C\u1ee7a B\u1ea1n</h3>
+                <p class="text-xs text-indigo-200">T\u00f9y bi\u1ebfn ti\u00eau \u0111\u1ec1, l\u1eddi d\u1eabn v\u00e0 c\u1ea3m nh\u1eadn c\u00e1 nh\u00e2n tr\u01b0\u1edbc khi ph\u00ea duy\u1ec7t xu\u1ea5t b\u1ea3n.</p>
+              </div>
+              <button type="button" onclick="window.HahaSocialHub.closeEditPostModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-sm font-bold transition-all">\u2715</button>
+            </div>
+
+            <!-- BODY 2 C\u1ed8T -->
+            <div class="p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+              
+              <!-- C\u1ed8T TR\u00c1I: FORM SO\u1ea0N TH\u1ea2O (7/12) -->
+              <div class="lg:col-span-7 space-y-4">
+                
+                <div class="space-y-1.5">
+                  <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">1. Ti\u00eau \u0111\u1ec1 b\u00e0i vi\u1ebft (Headline):</label>
+                  <input type="text" id="ctv-edit-headline" value="${safeHeadline}" oninput="window.HahaSocialHub.updateEditPreview()" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-indigo-500 font-sans shadow-inner">
+                </div>
+
+                <div class="space-y-1.5">
+                  <div class="flex items-center justify-between">
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">2. N\u1ed9i dung b\u00e0i vi\u1ebft (Content Body):</label>
+                    <span class="text-[10px] text-slate-400">T\u1ef1 do vi\u1ebft theo c\u1ea3m x\u00fac c\u00e1 nh\u00e2n</span>
+                  </div>
+                  <textarea id="ctv-edit-content" rows="8" oninput="window.HahaSocialHub.updateEditPreview()" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-800 focus:bg-white focus:ring-2 focus:ring-indigo-500 leading-relaxed font-sans shadow-inner">${post.content}</textarea>
+                </div>
+
+                <div class="space-y-1.5">
+                  <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">3. Th\u1ebb Hashtags:</label>
+                  <input type="text" id="ctv-edit-hashtags" value="${safeHashtags}" oninput="window.HahaSocialHub.updateEditPreview()" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono text-indigo-700 focus:bg-white focus:ring-2 focus:ring-indigo-500">
+                </div>
+
+                <!-- B\u1ea3o to\u00e0n Link Ref CTV -->
+                <div class="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl space-y-1.5">
+                  <div class="flex items-center space-x-2 text-xs font-extrabold text-emerald-900">
+                    <span>\uD83D\uDD17</span>
+                    <span>Link Ti\u1ebfp Th\u1ecb \u0110\u1ed9c Quy\u1ec1n C\u1ee7a B\u1ea1n (T\u1ef1 \u0111\u1ed9ng b\u1ea3o to\u00e0n 100%):</span>
+                  </div>
+                  <div class="font-mono text-[11px] text-emerald-800 bg-white/80 p-2 rounded-xl border border-emerald-200 break-all select-all">
+                    ${refUrl}
+                  </div>
+                  <p class="text-[10px] text-emerald-700 leading-relaxed">
+                    \u2714 Khi b\u1ea1n b\u1ea5m xu\u1ea5t b\u1ea3n ho\u1eb7c sao ch\u00e9p, h\u1ec7 th\u1ed1ng lu\u00f4n t\u1ef1 \u0111\u1ed9ng \u0111\u00ednh k\u00e8m link ref n\u00e0y v\u00e0o cu\u1ed1i b\u00e0i vi\u1ebft \u0111\u1ec3 \u0111\u1ea3m b\u1ea3o ghi nh\u1eadn doanh s\u1ed1 & hoa h\u1ed3ng ch\u00ednh x\u00e1c cho b\u1ea1n.
+                  </p>
+                </div>
+              </div>
+
+              <!-- C\u1ed8T PH\u1ea2I: XEM TR\u01af\u1edaC TH\u1ef0C T\u1ebe M\u1ea0NG X\u00c3 H\u1ed8I (5/12) -->
+              <div class="lg:col-span-5 space-y-2">
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">\uD83D\uDC41\uFE0F Xem tr\u01b0\u1edbc b\u00e0i \u0111\u0103ng MXH:</label>
+                
+                <div class="bg-white rounded-2xl border border-slate-300 shadow-sm p-4 space-y-3 font-sans">
+                  <!-- Post Header -->
+                  <div class="flex items-center space-x-2.5">
+                    <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 text-white flex items-center justify-center font-bold text-sm shadow-xs">
+                      ${ctv.name ? ctv.name.slice(0, 1) : 'C'}
+                    </div>
+                    <div>
+                      <div class="font-bold text-xs text-slate-900">${ctv.name}</div>
+                      <div class="text-[10px] text-slate-400 flex items-center space-x-1">
+                        <span>V\u1eeba xong</span>
+                        <span>&bull;</span>
+                        <span>\uD83C\uDF10 C\u00f4ng khai</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Post Content Preview -->
+                  <div class="space-y-2">
+                    <h4 id="ctv-preview-headline" class="font-bold text-xs text-slate-900 leading-snug"></h4>
+                    <div id="ctv-preview-body" class="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed max-h-48 overflow-y-auto"></div>
+                    <div id="ctv-preview-hashtags" class="text-[11px] font-mono text-indigo-600"></div>
+                  </div>
+
+                  <!-- Media Banner -->
+                  ${post.mediaUrl ? `
+                    <div class="rounded-xl overflow-hidden bg-slate-100 border border-slate-200">
+                      <img src="${post.mediaUrl}" alt="Tour Banner" class="w-full h-36 object-cover">
+                    </div>
+                  ` : ''}
+
+                  <!-- Call To Action Card -->
+                  <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
+                    <div>
+                      <div class="font-bold text-slate-800 text-[11px] truncate">${camp.tourName || 'Tour Sinh Th\u00e1i HaHa'}</div>
+                      <div class="text-[10px] text-emerald-700 font-semibold">\u2714 Cam k\u1ebft sinh th\u00e1i &bull; \u01afu \u0111\u00e3i nh\u00f3m</div>
+                    </div>
+                    <span class="px-2 py-1 bg-indigo-600 text-white font-extrabold text-[10px] rounded-lg shadow-xs flex-shrink-0">\u0110\u1eb7t Ngay</span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- FOOTER MODAL -->
+            <div class="p-5 bg-slate-50 rounded-b-3xl border-t border-slate-200 flex flex-wrap items-center justify-between gap-3">
+              <button type="button" onclick="window.HahaSocialHub.closeEditPostModal()" class="px-4 py-2.5 text-xs font-bold text-slate-600 hover:text-slate-800 bg-white border border-slate-300 rounded-xl transition-all">
+                \u2715 H\u1ee7y b\u1ecf
+              </button>
+              
+              <div class="flex items-center space-x-2">
+                <button type="button" onclick="window.HahaSocialHub.saveEditedPost('${post.id}', false)" class="px-4 py-2.5 text-xs font-bold text-slate-800 bg-white hover:bg-slate-100 border border-slate-300 rounded-xl shadow-xs transition-all">
+                  \uD83D\uDCBE L\u01b0u B\u1ea3n Nh\u00e1p \u0110\u00e3 S\u1eeda
+                </button>
+                <button type="button" onclick="window.HahaSocialHub.saveEditedPost('${post.id}', true)" class="px-5 py-2.5 text-xs font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md transition-all active:scale-95 flex items-center space-x-1.5">
+                  <span>\uD83D\uDE80</span>
+                  <span>L\u01b0u & Duy\u1ec7t \u0110\u0103ng Ngay</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      `;
+
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+      this.updateEditPreview();
+    },
+
+    updateEditPreview: function() {
+      const hEl = document.getElementById('ctv-edit-headline');
+      const bEl = document.getElementById('ctv-edit-content');
+      const tEl = document.getElementById('ctv-edit-hashtags');
+
+      const prevH = document.getElementById('ctv-preview-headline');
+      const prevB = document.getElementById('ctv-preview-body');
+      const prevT = document.getElementById('ctv-preview-hashtags');
+
+      if (prevH && hEl) prevH.textContent = hEl.value;
+      if (prevB && bEl) prevB.textContent = bEl.value;
+      if (prevT && tEl) prevT.textContent = tEl.value;
+    },
+
+    closeEditPostModal: function() {
+      const modal = document.getElementById('ctv-edit-post-modal');
+      if (modal) modal.remove();
+    },
+
+    saveEditedPost: function(postId, shouldPublishImmediately) {
+      const post = (db.ctvPendingPosts || []).find(p => p.id === postId);
+      if (!post) return;
+
+      const hEl = document.getElementById('ctv-edit-headline');
+      const bEl = document.getElementById('ctv-edit-content');
+      const tEl = document.getElementById('ctv-edit-hashtags');
+
+      const newHeadline = hEl ? hEl.value.trim() : post.headline;
+      const newContent = bEl ? bEl.value.trim() : post.content;
+      const newHashtags = tEl ? tEl.value.trim() : post.hashtags;
+
+      if (!newContent || newContent.length < 5) {
+        alert("Vui l\u00f2ng nh\u1eadp n\u1ed9i dung b\u00e0i vi\u1ebft!");
+        return;
+      }
+
+      post.headline = newHeadline;
+      post.content = newContent;
+      post.hashtags = newHashtags;
+      post.lastEditedAt = new Date().toISOString().replace('T', ' ').slice(0, 16);
+
+      const currentCtvId = (typeof currentUser !== 'undefined' && currentUser && currentUser.ctvId) ? currentUser.ctvId : 'CTV-001';
+      if (!post.ctvActions) post.ctvActions = {};
+      if (!shouldPublishImmediately) {
+        post.ctvActions[currentCtvId] = {
+          status: 'CTV_DRAFT_EDITED',
+          at: post.lastEditedAt
+        };
+      }
+
+      if (typeof saveDatabase === 'function') saveDatabase();
+      this.closeEditPostModal();
+
+      if (shouldPublishImmediately) {
+        this.ctvApprovePost(postId);
+      } else {
+        alert("\u2705 \u0110\u00c3 L\u01afU N\u1ed8I DUNG \u0110\u00c3 CH\u1ec8NH S\u1eecA!\n\nB\u1ea3n nh\u00e1p \u0111\u00e3 \u0111\u01b0\u1ee3c c\u1eadp nh\u1eadt th\u00e0nh c\u00f4ng. B\u1ea1n c\u00f3 th\u1ec3 b\u1ea5m [Duy\u1ec7t & \u0110\u0103ng] b\u1ea5t c\u1ee9 l\u00fac n\u00e0o.");
         this.renderCtvSocialTab();
       }
     },
