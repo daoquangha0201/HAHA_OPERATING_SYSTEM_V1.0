@@ -258,6 +258,10 @@
               <div class="font-bold text-emerald-900">📊 Kế toán (Thị Mai)</div>
               <div class="text-[10px] text-emerald-700">Đối soát hoa hồng</div>
             </button>
+            <button type="button" id="quick-login-card-marketing" onclick="quickLogin('marketing1')" class="p-2 text-left rounded-xl border border-cyan-200 bg-cyan-50/70 hover:bg-cyan-100 transition-all">
+              <div class="font-bold text-cyan-900">&#128227; Marketing (Ho&#224;ng Nam)</div>
+              <div class="text-[10px] text-cyan-700">Chi&#7871;n d&#7883;ch &amp; MXH CTV</div>
+            </button>
           </div>
         </div>
       </div>
@@ -481,6 +485,7 @@
               <option value="sale01">Chuyển: 💼 Sale (Văn An)</option>
               <option value="dieuhanh">Chuyển: 🧭 Điều hành (Đức Huy)</option>
               <option value="ketoan">Chuyển: 💰 Kế toán (Thị Mai)</option>
+              <option value="marketing1">Chuy&#7875;n: &#128227; Marketing (Ho&#224;ng Nam)</option>
               <option value="ctv_hoangyen">Chuyển: 🌱 CTV (Hoàng Yến)</option>
               <option value="ctv_minhtuan">Chuyển: 🌱 CTV (Minh Tuấn)</option>
               <option value="cattien_ecolodge">Chuyển: 🏨 Đối Tác (Ecolodge Cát Tiên 4★)</option>
@@ -591,6 +596,7 @@
           <option value="9">🛡️ 9. Nhật ký Audit Log</option>
           <option value="10" id="opt-mobile-mod10" class="hidden">🌱 10. Cổng CTV</option>
           <option value="11" id="opt-mobile-mod11" class="hidden">🏨 11. Cổng Đối Tác NCC</option>
+          <option value="12" id="opt-mobile-mod12" class="hidden">&#128227; 12. Marketing &amp; MXH CTV</option>
         </select>
       </div>
       <div class="flex items-center space-x-1.5 flex-shrink-0">
@@ -678,6 +684,10 @@
           <div class="nav-item" onclick="switchModule(9)" id="nav-mod-9">
             <span class="mr-2.5">🛡️</span>
             <span>9. Nhật ký Audit Log</span>
+          </div>
+          <div class="nav-item" onclick="switchModule(12)" id="nav-mod-12">
+            <span class="mr-2.5">&#128227;</span>
+            <span>12. Marketing &amp; MXH CTV</span>
           </div>
 
           <div class="mt-4 pt-3 border-t border-slate-100 px-3 text-[10px] text-slate-400">

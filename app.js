@@ -365,6 +365,7 @@ const INITIAL_SALE_KPIS = [
 
 // Danh sách tài khoản đăng nhập (Bảo mật SHA-256)
 const INITIAL_USERS = [
+  { id: 'NV-MKT01', username: 'marketing1', passwordHash: DEFAULT_PASS_HASH, salt: SYSTEM_SALT, name: 'Nguy\u1ec5n Ho\u00e0ng Nam', role: 'MARKETING', roleTitle: 'Tr\u01b0\u1edfng Ph\u00f2ng Marketing L\u1eef H\u00e0nh', avatar: '\uD83D\uDCE2', status: 'active', ctvId: null },
   { id: 'NV-001', username: 'ceo', passwordHash: DEFAULT_PASS_HASH, salt: SYSTEM_SALT, name: 'Đỗ Thành Đạt', role: 'CEO', roleTitle: 'Giám đốc Điều hành', avatar: '👑', status: 'active', ctvId: null },
   { id: 'NV-002', username: 'sale01', passwordHash: DEFAULT_PASS_HASH, salt: SYSTEM_SALT, name: 'Nguyễn Văn An', role: 'SALE', roleTitle: 'Leader Kinh doanh', avatar: '💼', status: 'active', ctvId: null },
   { id: 'NV-005', username: 'sale02', passwordHash: DEFAULT_PASS_HASH, salt: SYSTEM_SALT, name: 'Trần Thị Ngọc', role: 'SALE', roleTitle: 'Chuyên viên Kinh doanh', avatar: '💼', status: 'active', ctvId: null },
@@ -875,12 +876,13 @@ let currentOpsTab = 'incoming'; // 'incoming', 'tours', 'suppliers', 'orders'
 let currentNotifTab = 'inbox'; // 'inbox', 'outbox'
 
 const ROLE_PERMISSIONS = {
-  'CEO': [1, 2, 3, 4, 5, 6, 7, 8, 9, 11], // Toàn quyền giám sát & điều hành hợp nhất (Bao gồm Cổng Đối tác)
+  'CEO': [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12], // Toàn quyền giám sát & điều hành hợp nhất (Bao gồm Cổng Đối tác)
   'SALE': [2, 3, 4, 8],                // CRM khách hàng, Quản lý CTV, Báo giá & Đơn tour, Ngân hàng tour
   'OPS': [5, 8],                      // Lịch khởi hành & Điều hành tour, Lệnh đặt NCC & Voucher, Ngân hàng tour (Không xem/sửa báo giá Sale)
   'KE_TOAN': [6, 7],                  // Tài chính & Sổ quỹ thu chi, Đối soát hoa hồng CTV & Duyệt lệnh NCC (Tuyệt đối không can thiệp CRM/Báo giá/Điều hành)
   'CTV': [10],                        // Cổng thông tin đối tác CTV
-  'SUPPLIER': [11]                    // Cổng quản trị đối tác cung ứng riêng biệt
+  'SUPPLIER': [11],
+  'MARKETING': [1, 2, 8, 10, 12]       // Ph\u00f2ng Marketing L\u1eef h\u00e0nh & \u0110i\u1ec1u ph\u1ed1i MXH CTV                    // Cổng quản trị đối tác cung ứng riêng biệt
 };
 
 // ==========================================
@@ -2433,6 +2435,7 @@ function getDefaultModuleForRole(role) {
   if (role === 'KE_TOAN') return 6;
   if (role === 'CTV') return 10;
   if (role === 'SUPPLIER') return 11;
+  if (role === 'MARKETING') return 12;
   return 2;
 }
 
@@ -2466,7 +2469,8 @@ function quickLogin(username) {
     (unameLower === 'ceo' && (u.role === 'CEO' || u.username === 'admin' || u.username === 'ceo')) ||
     (unameLower === 'sale01' && (u.role === 'SALE' || u.username === 'sales' || u.username === 'sale01')) ||
     (unameLower === 'dieuhanh' && (u.role === 'OPS' || u.username === 'dieuhanh')) ||
-    (unameLower === 'ketoan' && (u.role === 'KE_TOAN' || u.username === 'ketoan'))
+    (unameLower === 'ketoan' && (u.role === 'KE_TOAN' || u.username === 'ketoan')) ||
+    (unameLower === 'marketing1' && (u.role === 'MARKETING' || u.username === 'marketing' || u.username === 'marketing1'))
   );
 
   if (!user && typeof INITIAL_USERS !== 'undefined' && Array.isArray(INITIAL_USERS)) {
@@ -2762,6 +2766,8 @@ function applyRoleSecurity() {
     // Cập nhật tùy chọn hiển thị trên Dropdown chuyển phân hệ Di động
     const opt10 = document.getElementById('opt-mobile-mod10');
     const opt11 = document.getElementById('opt-mobile-mod11');
+    const opt12 = document.getElementById('opt-mobile-mod12');
+    if (opt12) opt12.classList.toggle('hidden', !allowedModules.includes(12));
     if (opt10) opt10.classList.toggle('hidden', !isCtv && currentUser.role !== 'CEO');
     if (opt11) opt11.classList.toggle('hidden', !isSupplier && currentUser.role !== 'CEO');
   }
@@ -2795,7 +2801,7 @@ function switchModule(modId) {
     }
   }
 
-  for (let i = 1; i <= 11; i++) {
+  for (let i = 1; i <= 12; i++) {
     const navItem = document.getElementById(`nav-mod-${i}`);
     if (navItem) {
       if (i === modId) navItem.classList.add('active');
@@ -2804,7 +2810,7 @@ function switchModule(modId) {
   }
 
   // Ẩn tất cả các phân hệ
-  const allModules = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+  const allModules = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
   allModules.forEach(id => {
     const el = document.getElementById(`view-module-${id}`);
     if (el) el.classList.add('hidden');
@@ -2828,6 +2834,7 @@ function switchModule(modId) {
   else if (modId === 9) renderAuditLogModule();
   else if (modId === 10) renderCtvPortal();
   else if (modId === 11) renderSupplierPortal();
+  else if (modId === 12) renderMarketingModule();
 }
 
 // Bật/tắt menu sidebar trên điện thoại
@@ -15906,3 +15913,11 @@ if (document.readyState === 'loading') {
 } else {
   initInterAppRealtimeBridge();
 }
+
+// Ph\u00e2n h\u1ec7 12: Ph\u00f2ng Marketing L\u1eef H\u00e0nh & \u0110i\u1ec1u Ph\u1ed1i MXH CTV
+function renderMarketingModule() {
+  if (window.HahaSocialHub && typeof window.HahaSocialHub.renderMarketingDepartmentModule === 'function') {
+    window.HahaSocialHub.renderMarketingDepartmentModule();
+  }
+}
+window.renderMarketingModule = renderMarketingModule;

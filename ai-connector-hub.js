@@ -396,7 +396,7 @@
       }
 
       // 5. Marketing, TikTok & Social Hub
-      if (q.includes('social') || q.includes('tiktok') || q.includes('facebook') || q.includes('vi\u1ebft b\u00e0i') || q.includes('marketing')) {
+      if (q.includes('social') || q.includes('tiktok') || q.includes('facebook') || q.includes('vi\u1ebft b\u00e0i') || q.includes('viet bai') || q.includes('qu\u1ea3ng b\u00e1') || q.includes('quang ba') || q.includes('b\u00e0i vi\u1ebft') || q.includes('bai viet') || q.includes('marketing') || q.includes('content')) {
         return `\uD83C\uDFAC K\u1ecaCH B\u1ea2N VIDEO TIKTOK 30 GI\u00c2Y & B\u00c0I \u0110\u0102NG SOCIAL HUB:
 \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501
 [00:00 - 00:03] HOOK TH\u1eca GI\u00c1C:

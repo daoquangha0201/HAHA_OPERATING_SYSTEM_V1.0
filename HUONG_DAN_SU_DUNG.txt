@@ -792,3 +792,44 @@ PHẦN 9: TRIỂN KHAI VERCEL & CẤU HÌNH ĐỒNG BỘ THỜI GIAN THỰC (REA
    - Khi Kế toán duyệt chi tiền nhà cung cấp hoặc xuất hóa đơn điện tử CQT -> Điện thoại của Điều hành và Sale cũng nhìn thấy trạng thái thanh toán ngay lập tức.
    - Nếu di chuyển vào khu vực mất sóng hoặc không có mạng: Hệ thống tự động chuyển sang chế độ Cục bộ (Local Cache). Khi có lại kết nối 5G/Wi-Fi, hệ thống sẽ tự động đồng bộ bù ngay lập tức!
 ================================================================================
+
+================================================================================
+PHAN 10: PHONG MARKETING DU LICH LU HANH & HE THONG DIEU PHOI MXH CTV (MODULE 12)
+================================================================================
+
+1. TAI KHOAN TRUONG PHONG MARKETING:
+   - Ten dang nhap: marketing1
+   - Mat khau: 123456
+   - Ho va ten: Nguyen Hoang Nam (Truong Phong Marketing & Truyen Thong)
+   - Phan quyen (RBAC): Module 1 (Radar Lead), Module 2 (CRM Lead Funnel),
+     Module 8 (Ngan Hang Tour), Module 10 (AI Social Hub), Module 12 (Marketing Hub).
+
+2. CHUC NANG CHUYEN MON PHONG MARKETING LU HANH:
+   a. Quan ly chien dich tiep thi tour: Tao cac chien dich quang ba tour sinh thai
+      (Nam Cat Tien, Mang Den, Trekking, Healing) kem hinh anh banner, target pax,
+      thong diep chu dao va uu dai nhom.
+   b. Dieu phoi bai viet tiep thi xuong mang luoi CTV theo 2 CHE DO:
+      - CHE DO 1: Tu dong dang (Auto-Publish API) tren cac tai khoan MXH ma CTV
+        da uy quyen qua OAuth 2.0 chinh thuc.
+      - CHE DO 2: Gui Hom thu CTV phe duyet (Require CTV Approval).
+        Noi dung duoc ca nhan hoa kem Ma CTV va Link tiep thi rieng:
+        https://daoquangha0201.github.io/HAHA-ECO-TRAVEL/storefront.html?ref=CTV-XXX&camp=CAMP-YYY
+        CTV nhan thong bao trong Hom thu, xem truoc va bam:
+        [Duyet & Dang ngay] hoac [Sao chep tu dang], [Sua], [Tu choi].
+   c. Giam sat tai khoan MXH CTV da ket noi:
+      - Theo doi trang thai token OAuth, thoi gian het han, quyen han da cap.
+      - Tuan thu 100% quyen rieng tu: Khong yeu cau mat khau Facebook/Instagram/TikTok,
+        khong luu mat khau, cho phep CTV ngat ket noi bat cu luc nao.
+   d. Thu thap & Ban Lead ve CRM:
+      - Khi khach hang bam link bio cua CTV hoac dang ky tour tren Storefront,
+        AI Lead Generation Agent tu dong ghi nhan Nguon CTV, Ma chien dich,
+        ban Lead ve Module 2 (CRM) de Sale cham soc va chot don.
+      - Hoa hong duoc he thong tinh tu dong va ghi nhan cho CTV.
+
+3. AI STUDIO SINH BAI VIET CHO CTV (100% FONT CHUAN UNICODE):
+   - CTV co the vao Tab 6 (AI Social Hub) trong Cong CTV de sinh noi dung:
+     + Phong cach Blogger Trai Nghiem & Review
+     + Phong cach Chua Lanh & Thien Nhien (Healing)
+     + Kich ban Video ngan TikTok / Reels 30 giay (Hook - Body - CTA)
+   - 100% font tieng Viet chuan muc, khong bao gio loi font hay vo ky tu.
+================================================================================
