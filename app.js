@@ -2370,6 +2370,9 @@ function checkUrlPortalParams() {
     } else if (portalParam === 'ceo' || hash === '#portal-ceo') {
       toggleLoginMode('staff');
       filterStaffDept('CEO');
+    } else if (portalParam === 'marketing' || hash === '#portal-marketing' || hash === '#marketing') {
+      toggleLoginMode('staff');
+      filterStaffDept('MARKETING');
     } else {
       // Mặc định khi vào trang chủ chưa có tham số: Hiển thị Gateway điều hướng chuyên nghiệp
       showPortalGateway();
@@ -2731,8 +2734,7 @@ function applyRoleSecurity() {
 
     for (let i = 1; i <= 12; i++) {
       if (i === 11) continue;
-      const navItem = document.getElementById(
-av-mod-2773);
+      const navItem = document.getElementById(`nav-mod-${i}`);
       if (navItem) {
         navItem.classList.add('disabled', 'hidden');
         navItem.title = "D\u00e0nh ri\u00eang cho nh\u00e2n vi\u00ean n\u1ed9i b\u1ed9";
@@ -2751,8 +2753,7 @@ av-mod-2773);
 
     for (let i = 1; i <= 12; i++) {
       if (i === 10) continue;
-      const navItem = document.getElementById(
-av-mod-2773);
+      const navItem = document.getElementById(`nav-mod-${i}`);
       if (navItem) {
         navItem.classList.add('disabled', 'hidden');
         navItem.title = "C\u1ea5m truy c\u1eadp: D\u00e0nh ri\u00eang cho nh\u00e2n vi\u00ean n\u1ed9i b\u1ed9";
@@ -2762,7 +2763,7 @@ av-mod-2773);
     if (sidebarTitle) {
       sidebarTitle.textContent = currentUser.role === 'CEO'
         ? "C\u00e1c Ph\u00e2n H\u1ec7 H\u1ee3p Nh\u1ea5t"
-        : Ph\u00e2n H\u1ec7 Chuy\u00ean M\u00f4n ();
+        : `Ph\u00e2n H\u1ec7 Chuy\u00ean M\u00f4n (${currentUser.roleTitle || currentUser.role})`;
     }
     if (ctvNav) ctvNav.classList.add('hidden');
     if (supplierNav) {
@@ -2777,15 +2778,14 @@ av-mod-2773);
     const allowedModules = ROLE_PERMISSIONS[currentUser.role] || [];
     for (let i = 1; i <= 12; i++) {
       if (i === 10 || i === 11) continue;
-      const navItem = document.getElementById(
-av-mod-2773);
+      const navItem = document.getElementById(`nav-mod-${i}`);
       if (navItem) {
         if (allowedModules.includes(i)) {
           navItem.classList.remove('hidden', 'disabled');
           navItem.title = "B\u1ea5m \u0111\u1ec3 m\u1edf ph\u00e2n h\u1ec7 chuy\u00ean m\u00f4n";
         } else {
           navItem.classList.add('hidden', 'disabled');
-          navItem.title = T\u00e0i kho\u1ea3n  kh\u00f4ng c\u00f3 th\u1ea9m quy\u1ec1n truy c\u1eadp ph\u00e2n h\u1ec7 n\u00e0y;
+          navItem.title = `T\u00e0i kho\u1ea3n ${currentUser.roleTitle || currentUser.role} kh\u00f4ng c\u00f3 th\u1ea9m quy\u1ec1n truy c\u1eadp ph\u00e2n h\u1ec7 n\u00e0y`;
         }
       }
     }
