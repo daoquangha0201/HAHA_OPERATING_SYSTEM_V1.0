@@ -1279,6 +1279,7 @@ function resetToCleanSlate(silent = false) {
   db.socialLeads = [];
   db.socialPosts = [];
   db.socialAccounts = [];
+  db.ctvPendingPosts = [];
   db.auditLogs = [{
     id: 1,
     timestamp: new Date().toISOString(),
@@ -1787,6 +1788,7 @@ function migrateDatabaseIfNeeded() {
     if (!db.socialCampaigns) { db.socialCampaigns = []; changed = true; }
     if (!db.socialPosts) { db.socialPosts = []; changed = true; }
     if (!db.socialLeads) { db.socialLeads = []; changed = true; }
+    if (!db.ctvPendingPosts) { db.ctvPendingPosts = []; changed = true; }
   }
 
   syncAllFinancialData();
@@ -2960,10 +2962,13 @@ function syncCustomerCommission(customer) {
 // 7. PHÂN HỆ 10: CỔNG CTV (HIỂN THỊ CHÍNH SÁCH TOUR CÔNG KHAI)
 // ==========================================
 function renderCtvPortal() {
-  if (!currentUser || currentUser.role !== 'CTV') return;
-
-  const ctv = db.ctvs.find(c => c.id === currentUser.ctvId);
+  if (!currentUser) return;
+  const ctvId = (currentUser.role === 'CTV' && currentUser.ctvId) ? currentUser.ctvId : 'CTV-001';
+  const ctv = (db.ctvs || []).find(c => c.id === ctvId) || (db.ctvs || [])[0];
   if (!ctv) return;
+
+  // Cáº­p nháº­t huy hiá»‡u sá»‘ bÃ i chá» duyá»‡t HÃ²m thÆ° Marketing cho CTV
+  if (typeof updateCtvSocialBadge === 'function') updateCtvSocialBadge(ctv.id);
 
   // Thẻ thông tin cá nhân CTV (Hoàn toàn phẳng, không có rank/rate riêng)
   document.getElementById('ctv-card-code').textContent = ctv.code;
@@ -3661,6 +3666,30 @@ function copyCurrentSalesKitLink() {
   }
 }
 
+
+// Cap nhat so luong bai cho duyet tu Marketing tren Tab 6 Cong CTV
+function updateCtvSocialBadge(ctvId) {
+  try {
+    const targetId = ctvId || ((typeof currentUser !== 'undefined' && currentUser && currentUser.ctvId) ? currentUser.ctvId : 'CTV-001');
+    const pendingList = (typeof db !== 'undefined' && db && db.ctvPendingPosts) ? db.ctvPendingPosts : [];
+    const pendingCount = pendingList.filter(p => {
+      const targets = Array.isArray(p.targetCtvIds) ? p.targetCtvIds : (p.targetCtvIds ? [String(p.targetCtvIds)] : ['ALL']);
+      const isTargeted = targets.includes('ALL') || targets.includes(targetId);
+      const action = p.ctvActions ? p.ctvActions[targetId] : null;
+      return isTargeted && (!action || (action.status !== 'CTV_REJECTED' && action.status !== 'CTV_APPROVED'));
+    }).length;
+    const badgeEl = document.getElementById('ctv-social-pending-badge');
+    if (badgeEl) {
+      if (pendingCount > 0) {
+        badgeEl.textContent = pendingCount;
+        badgeEl.classList.remove('hidden');
+      } else {
+        badgeEl.classList.add('hidden');
+      }
+    }
+  } catch (e) {}
+}
+window.updateCtvSocialBadge = updateCtvSocialBadge;
 function switchCtvTab(tab) {
   currentCtvTab = tab;
   const custBtn = document.getElementById('ctv-tab-customers-btn');

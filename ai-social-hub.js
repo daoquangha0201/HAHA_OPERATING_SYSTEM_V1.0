@@ -1,4 +1,4 @@
-/**
+﻿/**
  * HAHA ECO TRAVEL - AI SOCIAL HUB & MARKETING SYNDICATION ENGINE
  * Phi\u00ean b\u1ea3n: 3.0 ULTIMATE (T\u00edch h\u1ee3p B\u1ed9 ph\u1eadn Marketing L\u1eef H\u00e0nh & \u0110i\u1ec1u ph\u1ed1i MXH CTV)
  * 
@@ -425,9 +425,14 @@
         return false;
       }
 
-      const camp = (db.socialCampaigns || []).find(c => c.id === campaignId) || (db.socialCampaigns || [])[0];
+      const camp = (db.socialCampaigns || []).find(c => c.id === campaignId || c.code === campaignId) || (db.socialCampaigns || [])[0] || {
+        id: 'CAMP-01',
+        name: 'Chi\u1ebfn D\u1ecbch Du L\u1ecbch Sinh Th\u00e1i HaHa',
+        tourName: 'Tour Nam C\u00e1t Ti\u00ean Sinh Th\u00e1i 2N1\u0110',
+        mediaBanner: 'https://images.unsplash.com/photo-1511497584788-87676104235f?w=800&auto=format&fit=crop'
+      };
       const ctvs = db.ctvs || [];
-      const targetIds = (targetCtvScope === 'ALL' || !targetCtvScope) ? ['ALL'] : [targetCtvScope];
+      const targetIds = (targetCtvScope === 'ALL' || !targetCtvScope) ? ['ALL'] : [String(targetCtvScope).trim()];
 
       const newPending = {
         id: 'MKT-POST-' + Date.now().toString(36).toUpperCase(),
@@ -445,27 +450,55 @@
         ctvActions: {}
       };
 
-      // N\u1ebfu ch\u1ebf \u0111\u1ed9 AUTO_PUBLISH: \u0110\u0103ng ngay tr\u00ean c\u00e1c t\u00e0i kho\u1ea3n \u0111\u00e3 k\u1ebft n\u1ed1i
+      if (!db.socialPosts) db.socialPosts = [];
+      if (!db.ctvPendingPosts) db.ctvPendingPosts = [];
+
+      // N\u1ebfu ch\u1ebf \u0111\u1ed9 AUTO_PUBLISH: \u0110\u0103ng ngay tr\u00ean c\u00e1c t\u00e0i kho\u1ea3n CTV \u0111\u00e3 c\u1ea5p quy\u1ec7n OAuth
+      let autoPublishedCount = 0;
       if (mode === 'AUTO_PUBLISH') {
-        const connectedAccounts = (db.socialAccounts || []).filter(a => a.platform === platformKey && a.status === 'CONNECTED');
-        connectedAccounts.forEach(acc => {
-          newPending.ctvActions[acc.ctvId] = {
-            status: 'AUTO_PUBLISHED',
-            at: new Date().toISOString().replace('T', ' ').slice(0, 16),
-            platformPostId: 'API-' + Math.random().toString(36).substring(2, 9).toUpperCase()
-          };
+        const targetedCtvs = targetIds.includes('ALL') ? ctvs : ctvs.filter(c => targetIds.includes(c.id));
+        targetedCtvs.forEach(targetCtv => {
+          const acc = (db.socialAccounts || []).find(a => a.ctvId === targetCtv.id && a.platform === platformKey && a.status === 'CONNECTED');
+          if (acc) {
+            newPending.ctvActions[targetCtv.id] = {
+              status: 'AUTO_PUBLISHED',
+              at: new Date().toISOString().replace('T', ' ').slice(0, 16),
+              platformPostId: 'OAUTH-API-' + Math.random().toString(36).substring(2, 9).toUpperCase()
+            };
+            const refUrl = `https://daoquangha0201.github.io/HAHA-ECO-TRAVEL/storefront.html?ref=${targetCtv.id}&camp=${camp.id}`;
+            const publishedText = `${headline.trim()}\n\n${content.trim()}\n\n${hashtags ? hashtags.trim() : '#HaHaEcoTravel'}\n\n\uD83D\uDC49 \u0110\u1eb7t tour ngay t\u1ea1i: ${refUrl}`;
+            db.socialPosts.unshift({
+              id: 'POST-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).substring(2, 6).toUpperCase(),
+              campaignId: camp.id,
+              ctvId: targetCtv.id,
+              platform: platformKey,
+              personaStyle: 'MARKETING_AUTO_SYNDICATED',
+              headline: headline.trim(),
+              content: publishedText,
+              hashtags: hashtags ? hashtags.trim() : '#HaHaEcoTravel',
+              mediaUrl: mediaUrl || camp.mediaBanner,
+              referralUrl: refUrl,
+              publishMode: 'AUTO_API',
+              status: 'PUBLISHED',
+              publishedAt: new Date().toISOString().replace('T', ' ').slice(0, 16),
+              stats: { views: 1, clicks: 0, leads: 0, revenue: 0, commission: 0 }
+            });
+            autoPublishedCount++;
+          }
         });
       }
 
-      if (!db.ctvPendingPosts) db.ctvPendingPosts = [];
       db.ctvPendingPosts.unshift(newPending);
 
-      if (typeof saveDatabase === 'function') saveDatabase();
+      if (typeof saveDatabase === 'function') saveDatabase(true, true);
       if (typeof recordAuditLog === 'function') {
-        recordAuditLog('MARKETING \u0110I\u1ec0U PH\u1ed0I B\u00c0I \u0110\u0102NG', `Ph\u00f2ng Marketing \u0111\u00e3 ph\u00e2n ph\u1ed1i b\u00e0i \u0111\u0103ng "${headline}" \u0111\u1ebfn m\u1ea1ng l\u01b0\u1edbi CTV (Ch\u1ebf \u0111\u1ed9: ${mode}).`);
+        recordAuditLog('MARKETING \u0110I\u1ec0U PH\u1ed0I B\u00c0I \u0110\u0102NG', `Ph\u00f2ng Marketing \u0111\u00e3 ph\u00e2n ph\u1ed1i b\u00e0i \u0111\u0103ng "${headline}" \u0111\u1ebfn m\u1ea1ng l\u01b0\u1edbi CTV (Ch\u1ebf \u0111\u1ed9: ${mode}, Xu\u1ea5t b\u1ea3n t\u1ef1 \u0111\u1ed9ng: ${autoPublishedCount} CTV).`);
       }
 
-      alert(`\u2705 \u0110\u00c3 PH\u00c2N PH\u1ed0I B\u00c0I \u0110\u0102NG TH\u00c0NH C\u00d4NG!\n\nCh\u1ebf \u0111\u1ed9: ${mode === 'AUTO_PUBLISH' ? '\u0110\u0103ng t\u1ef1 \u0111\u1ed9ng l\u00ean t\u00e0i kho\u1ea3n CTV \u0111\u00e3 c\u1ea5p quy\u1ec7n' : 'G\u1eedi v\u00e0o H\u00f2m th\u01b0 CTV ph\u00ea duy\u1ec7t tr\u01b0\u1edbc khi \u0111\u0103ng'}.\nPh\u1ea1m vi: ${targetIds.includes('ALL') ? 'To\u00e0n b\u1ed9 ' + ctvs.length + ' CTV' : 'CTV ' + targetCtvScope}`);
+      // C\u1eadp nh\u1eadt ngay huy hi\u1ec7u H\u00f2m th\u01b0 tr\u00ean Tab 6 c\u1ee7a CTV
+      if (typeof updateCtvSocialBadge === 'function') updateCtvSocialBadge();
+
+      alert(`\u2705 \u0110\u00c3 PH\u00c2N PH\u1ed0I B\u00c0I \u0110\u0102NG TH\u00c0NH C\u00d4NG!\n\nCh\u1ebf \u0111\u1ed9: ${mode === 'AUTO_PUBLISH' ? '\u0110\u0103ng t\u1ef1 \u0111\u1ed9ng th\u00e0nh c\u00f4ng cho ' + autoPublishedCount + ' t\u00e0i kho\u1ea3n CTV \u0111\u00e3 c\u1ea5p quy\u1ec7n OAuth' : 'G\u1eedi v\u00e0o H\u00f2m th\u01b0 CTV ph\u00ea duy\u1ec7t tr\u01b0\u1edbc khi \u0111\u0103ng'}.\nPh\u1ea1m vi: ${targetIds.includes('ALL') ? 'To\u00e0n b\u1ed9 ' + ctvs.length + ' CTV' : 'CTV ' + targetCtvScope}`);
       this.renderMarketingDepartmentModule();
       return true;
     },
@@ -771,12 +804,14 @@
       const myPosts = (db.socialPosts || []).filter(p => p.ctvId === ctv.id);
       const campaigns = db.socialCampaigns || [];
 
-      // L\u1ecdc c\u00e1c b\u00e0i \u0111\u0103ng do Marketing ph\u00e2n ph\u1ed1i xu\u1ed1ng cho CTV n\u00e0y
+      // L\u1ecdc c\u00e1c b\u00e0i \u0111\u0103ng do Marketing ph\u00e2n ph\u1ed1i xu\u1ed1ng cho CTV n\u00e0y (B\u1ea3o \u0111\u1ea3m kh\u00f4ng s\u00f3t b\u00e0i n\u00e0o)
       const pendingPosts = (db.ctvPendingPosts || []).filter(p => {
-        const isTargeted = p.targetCtvIds.includes('ALL') || p.targetCtvIds.includes(ctv.id);
-        const action = p.ctvActions ? p.ctvActions[ctv.id] : null;
+        const targets = Array.isArray(p.targetCtvIds) ? p.targetCtvIds : (p.targetCtvIds ? [String(p.targetCtvIds)] : ['ALL']);
+        const isTargeted = targets.includes('ALL') || targets.includes(ctv.id) || targets.includes(currentCtvId);
+        const action = p.ctvActions ? (p.ctvActions[ctv.id] || p.ctvActions[currentCtvId]) : null;
         return isTargeted && (!action || action.status !== 'CTV_REJECTED');
       });
+      if (typeof updateCtvSocialBadge === 'function') updateCtvSocialBadge(ctv.id);
 
       const totalViews = myPosts.reduce((s, p) => s + (p.stats ? p.stats.views || 0 : 0), 0);
       const totalClicks = myPosts.reduce((s, p) => s + (p.stats ? p.stats.clicks || 0 : 0), 0);
@@ -1386,6 +1421,17 @@
     },
 
     // 11. GI\u1ea2 L\u1eacP KH\u00c1CH TI\u1ec0M N\u0102NG T\u1eea MXH CTV \u0110\u1ed4 V\u1ec0 CRM
+    
+    // Ghi nh\u1eadn L\u01b0\u1ee3t click Link Ti\u1ebfp th\u1ecb CTV t\u1eeb Storefront
+    recordAffiliateClick: function(ctvId, campId) {
+      if (!ctvId || typeof db === 'undefined' || !Array.isArray(db.socialPosts)) return;
+      const targetPost = db.socialPosts.find(p => p.ctvId === ctvId && (!campId || p.campaignId === campId)) ||
+                         db.socialPosts.find(p => p.ctvId === ctvId);
+      if (targetPost && targetPost.stats) {
+        targetPost.stats.clicks = (targetPost.stats.clicks || 0) + 1;
+        if (typeof saveDatabase === 'function') saveDatabase(false, true);
+      }
+    },
     simulateIncomingLead: function(ctvId, campaignCode, custName, phone, pax) {
       if (!custName || !phone) {
         alert("Vui l\u00f2ng nh\u1eadp T\u00ean kh\u00e1ch v\u00e0 S\u1ed1 \u0111i\u1ec7n tho\u1ea1i!");

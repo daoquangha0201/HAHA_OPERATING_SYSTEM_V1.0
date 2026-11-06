@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ============================================================================
  * HAHA ECO TRAVEL - B2C SUPER-APP OTA STOREFRONT & REALTIME API PROFIT ENGINE
  * ============================================================================
@@ -2486,6 +2486,18 @@ function executeB2COnlinePayment(e) {
         isB2COnline: true
       };
       db.commissions.unshift(createdCommission);
+
+      // Dong bo thong ke cho AI Social Hub cua CTV (Leads, Doanh thu, Hoa hong)
+      try {
+        if (typeof db !== 'undefined' && Array.isArray(db.socialPosts)) {
+          const matchPost = db.socialPosts.find(p => p.ctvId === ctvRef);
+          if (matchPost && matchPost.stats) {
+            matchPost.stats.leads = (matchPost.stats.leads || 0) + 1;
+            matchPost.stats.revenue = (matchPost.stats.revenue || 0) + finalOrderTotal;
+            matchPost.stats.commission = (matchPost.stats.commission || 0) + createdCommission.amount;
+          }
+        }
+      } catch (e) {}
     }
 
     // 6. Đẩy thông báo chuông liên phòng ban (CEO, Sales, Điều hành, Kế toán, NCC)
@@ -3590,10 +3602,23 @@ function initB2CStorefrontIntegration() {
     const params = new URLSearchParams(window.location.search);
     const portal = (params.get('portal') || '').toLowerCase();
     const refParam = params.get('ref') || '';
+    const campParam = params.get('camp') || '';
     if (refParam) {
       window.b2cState.affiliateRef = refParam;
       const sel = document.getElementById('b2c-affiliate-select');
       if (sel) sel.value = refParam;
+
+      // Ghi nhan Click lien ket tiep thi vao db.socialPosts
+      try {
+        if (typeof db !== 'undefined' && Array.isArray(db.socialPosts)) {
+          const matchPost = db.socialPosts.find(p => p.ctvId === refParam && (!campParam || p.campaignId === campParam)) ||
+                            db.socialPosts.find(p => p.ctvId === refParam);
+          if (matchPost && matchPost.stats) {
+            matchPost.stats.clicks = (matchPost.stats.clicks || 0) + 1;
+            if (typeof saveDatabase === 'function') saveDatabase(false, true);
+          }
+        }
+      } catch (err) {}
     }
     const hash = (window.location.hash || '').toLowerCase();
     if (portal === 'b2c' || portal === 'store' || portal === 'web' || hash === '#b2c' || hash === '#storefront' || window.OPEN_B2C_BY_DEFAULT) {

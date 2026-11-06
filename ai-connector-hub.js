@@ -1,4 +1,4 @@
-/**
+﻿/**
  * HAHA ECO TRAVEL OPERATING SYSTEM - UNIVERSAL AI CONNECTOR & MODEL GATEWAY
  * Phi\u00ean b\u1ea3n: 3.0 ULTIMATE (T\u00edch h\u1ee3p DeepSeek AI, Google Gemini, OpenAI ChatGPT, Anthropic Claude, ElevenLabs, n8n)
  * 
@@ -395,21 +395,58 @@
 \u2022 H\u1ec7 th\u1ed1ng HaHa s\u1ebd t\u1ef1 \u0111\u1ed9ng c\u1ea5p Ch\u1ee9ng t\u1eeb kh\u1ea5u tr\u1eeb thu\u1ebf TNCN \u0111i\u1ec7n t\u1eed \u0111\u1ec3 CTV l\u00e0m th\u1ee7 t\u1ee5c quy\u1ebft to\u00e1n cu\u1ed1i n\u0103m.`;
       }
 
-      // 5. Marketing, TikTok & Social Hub
+      // 5. Marketing, TikTok & Social Hub (3 phi\u00ean b\u1ea3n \u0111\u1ed9c quy\u1ec1n 100% Ti\u1ebfng Vi\u1ec7t chu\u1ea9n x\u00e1c Unicode)
       if (q.includes('social') || q.includes('tiktok') || q.includes('facebook') || q.includes('vi\u1ebft b\u00e0i') || q.includes('viet bai') || q.includes('qu\u1ea3ng b\u00e1') || q.includes('quang ba') || q.includes('b\u00e0i vi\u1ebft') || q.includes('bai viet') || q.includes('marketing') || q.includes('content')) {
-        return `\uD83C\uDFAC K\u1ecaCH B\u1ea2N VIDEO TIKTOK 30 GI\u00c2Y & B\u00c0I \u0110\u0102NG SOCIAL HUB:
-\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501
-[00:00 - 00:03] HOOK TH\u1eca GI\u00c1C:
-\u25b6 C\u1ea3nh flycam r\u1eebng nguy\u00ean sinh Nam C\u00e1t Ti\u00ean trong s\u01b0\u01a1ng s\u1edbm.
-\u25b6 Ch\u1eef l\u1edbn: "B\u1ea1n \u0111\u00e3 bao gi\u1edd ng\u1ee7 gi\u1eefa r\u1eebng gi\u00e0 kh\u00f4ng c\u00f3 ti\u1ebfng c\u00f2i xe?"
+        const refLinkMatch = prompt.match(/https?:\/\/[^\s]+/);
+        const refUrl = refLinkMatch ? refLinkMatch[0] : 'https://daoquangha0201.github.io/HAHA-ECO-TRAVEL/storefront.html?ref=CTV-001&camp=cattien_nov26';
+        const tourMatch = prompt.match(/tour du l\u1ecbch:\s*([^.\n]+)/i);
+        const tourName = tourMatch ? tourMatch[1].trim() : 'Tour Nam C\u00e1t Ti\u00ean Sinh Th\u00e1i 2N1\u0110';
 
-[00:04 - 00:18] N\u1ed8I DUNG TR\u1ea2I NGHI\u1ec6M:
-\u25b6 C\u1ea3nh ch\u00e8o SUP s\u00f4ng \u0110\u1ed3ng Nai, th\u0103m c\u00e2y Tung 400 n\u0103m tu\u1ed5i, ng\u1eafm \u0111\u00e0n th\u00fa \u0111\u00eam.
-\u25b6 Gi\u1ecdng Voiceover \u1ea5m \u00e1p: "R\u1eddi xa kh\u00f3i b\u1ee5i \u0111\u00f4 th\u1ecb, h\u00e3y \u0111\u1ec3 thi\u00ean nhi\u00ean ch\u1eefa l\u00e0nh t\u00e2m h\u1ed3n b\u1ea1n v\u1edbi tour sinh th\u00e1i HaHa Eco Travel."
+        return `\uD83C\uDFDE\uFE0F B\u1ed8 N\u1ed8I DUNG TI\u1ebeP TH\u1eca AI 3 PHI\u00caN B\u1ea2N (CHU\u1ea8N DU L\u1ecaCH SINH TH\u00c1I HAHA):
+\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501
 
-[00:19 - 00:30] K\u00caU G\u1eccI H\u00c0NH \u0110\u1ed8NG (CTA):
-\u25b6 "Nh\u1ea5n v\u00e0o link bio ho\u1eb7c nh\u1eafn tin cho m\u00ecnh \u0111\u1ec3 nh\u1eadn ngay l\u1ecbch tr\u00ecnh chi ti\u1ebft v\u00e0 \u01b0u \u0111\u00e3i 10%!"
-\u25b6 Hashtags: #HaHaEcoTravel #DuLichSinhThai #NamCatTien #HealingTravel #GreenTour`;
+\uD83C\uDF3F PHI\u00caN B\u1ea2N 1: C\u00c2U CHUY\u1ec6N TR\u1ea2I NGHI\u1ec6M CH\u1eeeA L\u00c0NH (Facebook / Blog D\u00e0i):
+\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+\u0110\u00e3 bao l\u00e2u r\u1ed3i b\u1ea1n ch\u01b0a th\u1ee9c d\u1eady trong ti\u1ebfng chim h\u00f3t m\u00e0 kh\u00f4ng c\u00f3 c\u00f2i xe inh \u1ecfi?
+Cu\u1ed1i tu\u1ea7n tr\u01b0\u1edbc, m\u00ecnh quy\u1ebft \u0111\u1ecbnh "b\u1ecf tr\u1ed1n" deadline \u0111\u1ec3 tham gia chuy\u1ebfn ${tourName} c\u00f9ng HaHa Eco Travel. C\u1ea3m gi\u00e1c \u0111\u01b0\u1ee3c ch\u00e8o SUP gi\u1eefa s\u00f4ng \u0110\u1ed3ng Nai l\u00fac ho\u00e0ng h\u00f4n bu\u00f4ng xu\u1ed1ng, ch\u1ea1m tay v\u00e0o g\u1ed1c c\u00e2y Tung \u0111\u1ea1i th\u1ee5 400 n\u0103m tu\u1ed5i th\u1ef1c s\u1ef1 l\u00e0 li\u1ec1u thu\u1ed1c b\u1ed5 ch\u1eefa l\u00e0nh t\u00e2m h\u1ed3n.
+\u2714\uFE0F Tour cam k\u1ebft 100% kh\u00f4ng r\u00e1c th\u1ea3i nh\u1ef1a.
+\u2714\uFE0F Ecolodge ven s\u00f4ng chu\u1ea9n 4 sao, th\u1ef1c ph\u1ea9m h\u1eefu c\u01a1 b\u1ea3n \u0111\u1ecba.
+\u2714\uFE0F B\u1ea3o hi\u1ec3m tr\u1ecdn g\u00f3i 100 tri\u1ec7u/kh\u00e1ch.
+
+\uD83D\uDC49 Nh\u1ea5n v\u00e0o link n\u00e0y \u0111\u1ec3 xem chi ti\u1ebft & nh\u1eadn \u01b0u \u0111\u00e3i 10%:
+${refUrl}
+#HaHaEcoTravel #DuLichSinhThai #HealingTravel #GreenTour
+
+\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501
+
+\uD83D\uDCCC PHI\u00caN B\u1ea2N 2: C\u1ea8M NANG CHECK-IN & B\u00cd K\u00cdP S\u0102N TOUR (Ng\u1eafn G\u1ecdn, D\u1ec5 \u0110\u1ecdc):
+\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+TOP 3 TR\u1ea2I NGHI\u1ec6M PH\u1ea2I TH\u1eec KHI \u0110I ${tourName}:
+1. \uD83E\uDEF4 Ch\u00e8o SUP s\u00e1ng s\u1edbm ng\u1eafm s\u01b0\u01a1ng tr\u00ean m\u1eb7t n\u01b0\u1edbc.
+2. \uD83D\uDE9A Th\u1eed th\u00e1ch soi th\u00fa \u0111\u00eam hoang d\u00e3 tr\u00ean xe mui tr\u1ea7n.
+3. \uD83C\uDF72 Th\u01b0\u1edfng th\u1ee9c l\u1ea9u rau r\u1eebng v\u00e0 c\u00e1 l\u0103ng kho t\u1ed9 nguy\u00ean b\u1ea3n.
+\u26A1 \u0110\u1eb7c bi\u1ec7t: Nh\u00f3m t\u1eeb 4 kh\u00e1ch \u0111\u01b0\u1ee3c gi\u1ea3m ngay 10% khi \u0111\u1eb7t qua link \u0111\u1ed9c quy\u1ec1n:
+${refUrl}
+
+\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501
+
+\uD83C\uDFAC PHI\u00caN B\u1ea2N 3: K\u1ecaCH B\u1ea2N VIDEO TIKTOK 30 GI\u00c2Y (G\u1ee2I \u00dd G\u00d3C QUAY):
+\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+[00:00 - 00:03] G\u00d3C QUAY HOOK TH\u1eca GI\u00c1C:
+\u25b6 G\u00f3c m\u00e1y flycam t\u1eeb tr\u00ean cao xu\u1ed1ng t\u00e1n r\u1eebng gi\u00e0 nguy\u00ean sinh, c\u1eaft nhanh sang m\u1eb7t s\u00f4ng l\u1ea5p l\u00e1nh n\u1eafng s\u1edbm.
+\u25b6 Text ch\u1eef n\u1ed5i b\u1eadt: "Cu\u1ed1i tu\u1ea7n n\u00e0y: Ch\u1ecdn deadline hay ch\u1ecdn r\u1eebng xanh?"
+
+[00:04 - 00:18] G\u00d3C QUAY TR\u1ea2I NGHI\u1ec6M TH\u1ef0C T\u1ebe:
+\u25b6 C\u1ea3nh 1 (POV ng\u01b0\u1eddi \u0111i b\u1ed9): Ch\u1ea1m tay v\u00e0o th\u00e2n c\u00e2y c\u1ed5 th\u1ee5 kh\u1ed5ng l\u1ed3.
+\u25b6 C\u1ea3nh 2 (G\u00f3c ngang ch\u1eadm): Ch\u00e8o SUP nh\u1eb9 nh\u00e0ng l\u01b0\u1edbt tr\u00ean m\u1eb7t s\u00f4ng.
+\u25b6 C\u1ea3nh 3 (G\u00f3c c\u1eadn \u1ea5m \u00e1p): U\u1ed1ng tr\u00e0 th\u1ea3o m\u1ed9c b\u00ean hi\u00ean ecolodge ven su\u1ed1i.
+\u25b6 Voiceover: "R\u1eddi xa kh\u00f3i b\u1ee5i, h\u00e3y \u0111\u1ec3 ${tourName} c\u1ee7a HaHa Eco Travel gi\u00fap b\u1ea1n s\u1ea1c l\u1ea1i 100% n\u0103ng l\u01b0\u1ee3ng!"
+
+[00:19 - 00:30] CTA K\u1ebeT TH\u00daC:
+\u25b6 Ng\u01b0\u1eddi c\u01b0\u1eddi r\u1ea1ng r\u1ee1 v\u1eaby tay, tr\u1ecf tay xu\u1ed1ng link bio.
+\u25b6 Voiceover: "Nh\u1ea5n ngay v\u00e0o link bio c\u1ee7a m\u00ecnh \u0111\u1ec3 gi\u1eef ch\u1ed7 v\u00e0 nh\u1eadn ngay v\u00e9 SUP mi\u1ec5n ph\u00ed nh\u00e9!"
+\u25b6 Link Bio CTV: ${refUrl}
+\u25b6 Hashtags: #TikTokTravel #DuLichSinhThai #${tourName.replace(/\s+/g, '')} #HaHaEcoTravel #GreenTravel`;
       }
 
       // Ph\u1ea3n h\u1ed3i t\u1ed5ng qu\u00e1t v\u1ec1 h\u1ec7 th\u1ed1ng
