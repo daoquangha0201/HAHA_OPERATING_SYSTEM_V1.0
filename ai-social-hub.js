@@ -255,48 +255,175 @@
 
     // 4. K\u1ebeT N\u1ed0I & NG\u1eaeT K\u1ebeT N\u1ed0I T\u00c0I KHO\u1ea2N MXH OAUTH C\u1ee6A CTV
     connectAccount: function(platformKey) {
-      const p = this.PLATFORMS[platformKey];
-      if (!p) return;
+      return this.openConnectAccountModal(platformKey);
+    },
+
+    openConnectAccountModal: function(platformKey) {
+      const p = this.PLATFORMS[platformKey] || this.PLATFORMS.FACEBOOK;
+      const currentCtvId = (typeof currentUser !== 'undefined' && currentUser && currentUser.ctvId) ? currentUser.ctvId : 'CTV-001';
+      const ctv = (db.ctvs || []).find(c => c.id === currentCtvId) || { id: currentCtvId, name: 'C\u1ed9ng t\u00e1c vi\u00ean' };
+      const existing = (db.socialAccounts || []).find(a => a.ctvId === currentCtvId && a.platform === platformKey);
+
+      const existingName = existing ? existing.accountName : `${ctv.name} - ${p.name}`;
+      const existingUrl = existing && existing.pageUrl ? existing.pageUrl : '';
+      const existingMode = existing && existing.publishMode ? existing.publishMode : 'REQUIRE_APPROVAL';
+
+      const oldModal = document.getElementById('ctv-connect-social-modal');
+      if (oldModal) oldModal.remove();
+
+      const modalHtml = `
+        <div id="ctv-connect-social-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
+          <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-5 animate-scale-up">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div class="flex items-center space-x-3">
+                <span class="text-3xl">${p.icon}</span>
+                <div>
+                  <h3 class="font-extrabold text-base text-slate-900">K\u1ebft N\u1ed1i K\u00eanh ${p.name} (OAuth 2.0)</h3>
+                  <p class="text-xs text-slate-500">C\u1ed9ng t\u00e1c vi\u00ean: <span class="font-bold text-indigo-600">${ctv.name}</span> (${ctv.id})</p>
+                </div>
+              </div>
+              <button type="button" onclick="window.HahaSocialHub.closeConnectAccountModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold flex items-center justify-center transition-all">
+                \u2715
+              </button>
+            </div>
+
+            <div class="space-y-4 text-xs">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">T\u00ean Trang / Fanpage / K\u00eanh MXH c\u1ee7a b\u1ea1n <span class="text-rose-500">*</span></label>
+                <input id="connect-acc-name" type="text" value="${escapeHtml(existingName)}" placeholder="V\u00ed d\u1ee5: HaHa Travel - ${ctv.name}" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 font-medium focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-800 outline-none" />
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">\u0110\u01b0\u1eddng d\u1eabn (URL) Trang / K\u00eanh MXH th\u1ef1c t\u1ebf <span class="text-rose-500">*</span></label>
+                <input id="connect-acc-url" type="text" value="${escapeHtml(existingUrl)}" placeholder="V\u00ed d\u1ee5: https://facebook.com/trang-cua-ban ho\u1eb7c https://tiktok.com/@kenh-cua-ban" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 font-mono text-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none" />
+                <p class="text-[11px] text-slate-500 mt-1">Khi b\u1ea1n Duy\u1ec7t \u0111\u0103ng ho\u1eb7c Sao ch\u00e9p, h\u1ec7 th\u1ed1ng s\u1ebd m\u1edf tr\u1ef1c ti\u1ebfp trang n\u00e0y v\u00e0 t\u1ef1 \u0111\u1ed9ng copy b\u00e0i vi\u1ebft \u0111\u1ec3 b\u1ea1n d\u00e1n (Ctrl+V) \u0111\u0103ng ngay.</p>
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Ch\u1ebf \u0111\u1ed9 xu\u1ea5t b\u1ea3n b\u00e0i vi\u1ebft</label>
+                <select id="connect-acc-mode" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 font-medium text-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none">
+                  <option value="REQUIRE_APPROVAL" ${existingMode === 'REQUIRE_APPROVAL' ? 'selected' : ''}>CTV duy\u1ec7t tr\u01b0\u1edbc khi \u0111\u0103ng (Khuy\u00ean d\u00f9ng - Ch\u1ee7 \u0111\u1ed9ng t\u00f9y ch\u1ec9nh)</option>
+                  <option value="AUTO_PUBLISH" ${existingMode === 'AUTO_PUBLISH' ? 'selected' : ''}>T\u1ef1 \u0111\u1ed9ng xu\u1ea5t b\u1ea3n khi Marketing ph\u00e1t h\u00e0nh tour m\u1edbi</option>
+                </select>
+              </div>
+
+              <div class="p-3.5 rounded-2xl bg-indigo-50/70 border border-indigo-100 space-y-1 text-[11px] text-indigo-950">
+                <div class="font-extrabold flex items-center space-x-1.5 text-indigo-900">
+                  <span>\uD83D\uDD12 B\u1ea3o m\u1eadt OAuth 2.0 & B\u1ea3o v\u1ec7 quy\u1ec1n l\u1ee3i CTV</span>
+                </div>
+                <ul class="list-disc list-inside space-y-0.5 text-slate-600">
+                  <li>HAHA tuy\u1ec7t \u0111\u1ed1i kh\u00f4ng y\u00eau c\u1ea7u v\u00e0 kh\u00f4ng l\u01b0u m\u1eadt kh\u1ea9u m\u1ea1ng x\u00e3 h\u1ed9i c\u1ee7a b\u1ea1n.</li>
+                  <li>B\u1ea1n c\u00f3 th\u1ec3 ng\u1eaft k\u1ebft n\u1ed1i b\u1ea5t k\u1ef3 l\u00fac n\u00e0o ch\u1ec9 v\u1edbi 1 click.</li>
+                  <li>M\u1ecdi b\u00e0i vi\u1ebft \u0111\u1ec1u \u0111\u01b0\u1ee3c g\u1eafn c\u1ed1 \u0111\u1ecbnh Link Bio ti\u1ebfp th\u1ecb \u0111\u1ec3 ghi nh\u1eadn hoa h\u1ed3ng.</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100">
+              <button type="button" onclick="window.HahaSocialHub.closeConnectAccountModal()" class="px-4 py-2.5 rounded-xl text-slate-600 font-bold hover:bg-slate-100 text-xs transition-all">
+                H\u1ee7y
+              </button>
+              <button type="button" onclick="window.HahaSocialHub.saveConnectedAccount('${platformKey}')" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs shadow-md transition-all active:scale-95 flex items-center space-x-1.5">
+                <span>\u2714\uFE0F X\u00e1c Nh\u1eadn & K\u1ebft N\u1ed1i</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+    },
+
+    closeConnectAccountModal: function() {
+      const modal = document.getElementById('ctv-connect-social-modal');
+      if (modal) modal.remove();
+    },
+
+    saveConnectedAccount: function(platformKey) {
+      const nameEl = document.getElementById('connect-acc-name');
+      const urlEl = document.getElementById('connect-acc-url');
+      const modeEl = document.getElementById('connect-acc-mode');
+
+      const accName = nameEl ? nameEl.value.trim() : '';
+      let accUrl = urlEl ? urlEl.value.trim() : '';
+      const pubMode = modeEl ? modeEl.value : 'REQUIRE_APPROVAL';
+
+      if (!accName) {
+        alert("Vui l\u00f2ng nh\u1eadp t\u00ean k\u00eanh ho\u1eb7c t\u00e0i kho\u1ea3n m\u1ea1ng x\u00e3 h\u1ed9i c\u1ee7a b\u1ea1n!");
+        return;
+      }
+
+      if (accUrl && !accUrl.startsWith('http://') && !accUrl.startsWith('https://')) {
+        accUrl = 'https://' + accUrl;
+      }
 
       const currentCtvId = (typeof currentUser !== 'undefined' && currentUser && currentUser.ctvId) ? currentUser.ctvId : 'CTV-001';
       const ctv = (db.ctvs || []).find(c => c.id === currentCtvId) || { id: currentCtvId, name: 'C\u1ed9ng t\u00e1c vi\u00ean' };
-
-      const defaultAccountName = `${ctv.name} - ${p.name}`;
-      const inputName = prompt(`K\u1ebeT N\u1ed0I T\u00c0I KHO\u1ea2N ${p.name.toUpperCase()} (CHU\u1ea8N OAUTH):\n\nNh\u1eadp t\u00ean Fanpage ho\u1eb7c t\u00e0i kho\u1ea3n CTV \u0111\u01b0\u1ee3c ph\u00e9p qu\u1ea3n l\u00fd n\u1ed9i dung:`, defaultAccountName);
-      if (!inputName || !inputName.trim()) return;
+      const p = this.PLATFORMS[platformKey] || this.PLATFORMS.FACEBOOK;
 
       if (!db.socialAccounts) db.socialAccounts = [];
-      const existing = db.socialAccounts.find(a => a.ctvId === currentCtvId && a.platform === platformKey);
+      let existing = db.socialAccounts.find(a => a.ctvId === currentCtvId && a.platform === platformKey);
 
       const expDate = new Date();
-      expDate.setDate(expDate.getDate() + 60);
+      expDate.setDate(expDate.getDate() + 90);
 
       if (existing) {
         existing.status = 'CONNECTED';
-        existing.accountName = inputName.trim();
+        existing.accountName = accName;
+        existing.pageUrl = accUrl;
+        existing.publishMode = pubMode;
         existing.connectedAt = new Date().toISOString().replace('T', ' ').slice(0, 16);
         existing.expiresAt = expDate.toISOString().replace('T', ' ').slice(0, 16);
       } else {
-        db.socialAccounts.push({
+        existing = {
           id: 'ACC-' + Date.now().toString(36).toUpperCase(),
           ctvId: currentCtvId,
           platform: platformKey,
-          accountName: inputName.trim(),
+          accountName: accName,
+          pageUrl: accUrl,
+          publishMode: pubMode,
           avatar: p.icon,
           status: 'CONNECTED',
           scope: platformKey === 'FACEBOOK' ? ['pages_manage_posts', 'pages_read_engagement'] : ['content_publish'],
           connectedAt: new Date().toISOString().replace('T', ' ').slice(0, 16),
           expiresAt: expDate.toISOString().replace('T', ' ').slice(0, 16)
-        });
+        };
+        db.socialAccounts.push(existing);
       }
 
       if (typeof saveDatabase === 'function') saveDatabase();
       if (typeof recordAuditLog === 'function') {
-        recordAuditLog('K\u1ebeT N\u1ed0I M\u1ea0NG X\u00c3 H\u1ed8I', `CTV ${ctv.id} \u0111\u00e3 c\u1ea5p quy\u1ec7n k\u1ebft n\u1ed1i OAuth cho t\u00e0i kho\u1ea3n ${inputName.trim()} tr\u00ean ${p.name}.`);
+        recordAuditLog('K\u1ebeT N\u1ed0I M\u1ea0NG X\u00c3 H\u1ed8I', `CTV ${ctv.id} \u0111\u00e3 k\u1ebft n\u1ed1i OAuth k\u00eanh ${accName} tr\u00ean ${p.name}.`);
       }
 
-      alert(`\u2705 K\u1ebeT N\u1ed0I TH\u00c0NH C\u00d4NG V\u1edaI ${p.name.toUpperCase()}!\n\nT\u00e0i kho\u1ea3n: "${inputName.trim()}" \u0111\u00e3 s\u1eb5n s\u00e0ng \u0111\u0103ng b\u00e0i qu\u1ea3ng b\u00e1 tour sinh th\u00e1i.`);
+      this.closeConnectAccountModal();
+      alert(`\u2705 K\u1ebeT N\u1ed0I TH\u00c0NH C\u00d4NG V\u1edaI ${p.name.toUpperCase()}!\n\nK\u00eanh: "${accName}"\n\u0110\u01b0\u1eddng d\u1eabn: ${accUrl || 'Ch\u01b0a c\u00e0i URL'}\nCh\u1ebf \u0111\u1ed9: ${pubMode === 'AUTO_PUBLISH' ? 'T\u1ef1 \u0111\u1ed9ng \u0111\u0103ng b\u00e0i' : 'CTV duy\u1ec7t b\u00e0i'}\n\nH\u1ec7 th\u1ed1ng \u0111\u00e3 s\u1eb5n s\u00e0ng \u0111\u1ec3 b\u1ea1n xu\u1ea5t b\u1ea3n b\u00e0i vi\u1ebft!`);
       this.renderCtvSocialTab();
+    },
+
+    openMyStorefront: function(ctvId) {
+      const currentCtvId = ctvId || ((typeof currentUser !== 'undefined' && currentUser && currentUser.ctvId) ? currentUser.ctvId : 'CTV-001');
+      const campId = (db.socialCampaigns && db.socialCampaigns[0]) ? db.socialCampaigns[0].code : 'CAMP-01';
+      const url = `https://daoquangha0201.github.io/HAHA-ECO-TRAVEL/storefront.html?ref=${currentCtvId}&camp=${campId}`;
+      window.open(url, '_blank');
+    },
+
+    copyMyStorefrontLink: function(ctvId) {
+      const currentCtvId = ctvId || ((typeof currentUser !== 'undefined' && currentUser && currentUser.ctvId) ? currentUser.ctvId : 'CTV-001');
+      const campId = (db.socialCampaigns && db.socialCampaigns[0]) ? db.socialCampaigns[0].code : 'CAMP-01';
+      const url = `https://daoquangha0201.github.io/HAHA-ECO-TRAVEL/storefront.html?ref=${currentCtvId}&camp=${campId}`;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(() => {
+          alert(`\u2705 \u0110\u00c3 SAO CH\u00c9P LINK B\u00c1N TOUR (BIO LINK)!\n\n${url}\n\n\uD83D\uDC49 B\u1ea1n h\u00e3y d\u00e1n link n\u00e0y v\u00e0o ph\u1ea7n Ti\u1ec3u s\u1eed (Bio) trang Facebook, TikTok ho\u1eb7c Zalo c\u1ee7a m\u00ecnh \u0111\u1ec3 kh\u00e1ch nh\u1ea5p v\u00e0o \u0111\u1eb7t tour.`);
+        }).catch(() => {
+          prompt("Sao ch\u00e9p Link Ti\u1ebfp Th\u1ecb c\u1ee7a b\u1ea1n t\u1ea1i \u0111\u00e2y:", url);
+        });
+      } else {
+        prompt("Sao ch\u00e9p Link Ti\u1ebfp Th\u1ecb c\u1ee7a b\u1ea1n t\u1ea1i \u0111\u00e2y:", url);
+      }
+    },
+
+    ctvEditPostModal: function(postId) {
+      return this.openEditPostModal(postId);
     },
 
     disconnectAccount: function(accId) {
@@ -546,11 +673,16 @@
         recordAuditLog('CTV PH\u00ca DUY\u1ec6T B\u00c0I \u0110\u0102NG', `CTV ${ctv.id} \u0111\u00e3 ph\u00ea duy\u1ec7t v\u00e0 ph\u00e1t h\u00e0nh b\u00e0i vi\u1ebft "${post.headline}" l\u00ean ${post.platform}.`);
       }
 
-      if (acc) {
-        alert(`\u2705 \u0110\u00c3 DUY\u1ec6T & XU\u1ea5T B\u1ea2N L\u00caN ${post.platform.toUpperCase()}!\n\nB\u00e0i vi\u1ebft \u0111\u00e3 \u0111\u01b0\u1ee3c \u0111\u0103ng th\u00e0nh c\u00f4ng l\u00ean t\u00e0i kho\u1ea3n "${acc.accountName}".\nLink gi\u1edbi thi\u1ec7u ri\u00eang c\u1ee7a b\u1ea1n \u0111\u00e3 \u0111\u01b0\u1ee3c g\u1eafn t\u1ef1 \u0111\u1ed9ng.`);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(publishedText);
+      }
+      if (acc && acc.pageUrl) {
+        const doOpen = confirm(`\u2705 \u0110\u00c3 DUY\u1ec6T & SAO CH\u00c9P B\u00c0I VI\u1ebeT V\u00c0O B\u1ed8 NH\u1eda T\u1ea0M (CLIPBOARD)!\n\nK\u00eanh k\u1ebft n\u1ed1i: ${acc.accountName}\nLink ti\u1ebfp th\u1ecb ri\u00eang c\u1ee7a b\u1ea1n \u0111\u00e3 \u0111\u01b0\u1ee3c g\u1eafn t\u1ef1 \u0111\u1ed9ng.\n\nB\u1ea5m [OK] \u0111\u1ec3 m\u1edf trang ${acc.accountName} ngay b\u00e2y gi\u1edd v\u00e0 d\u00e1n (Ctrl+V) \u0111\u0103ng b\u00e0i!`);
+        if (doOpen) window.open(acc.pageUrl, '_blank');
       } else {
-        if (navigator.clipboard) navigator.clipboard.writeText(publishedText);
-        alert(`\u2705 \u0110\u00c3 DUY\u1ec6T B\u00c0I VI\u1ebeT!\n\nDo b\u1ea1n ch\u01b0a k\u1ebft n\u1ed1i t\u00e0i kho\u1ea3n ${post.platform}, h\u1ec7 th\u1ed1ng \u0111\u00e3 t\u1ef1 \u0111\u1ed9ng SAO CH\u00c9P to\u00e0n b\u1ed9 b\u00e0i vi\u1ebft v\u00e0o Clipboard \u0111\u1ec3 b\u1ea1n d\u00e1n v\u00e0o ${post.platform} \u0111\u0103ng ngay!`);
+        const fallbackUrl = post.platform === 'FACEBOOK' ? 'https://www.facebook.com' : post.platform === 'TIKTOK' ? 'https://www.tiktok.com' : post.platform === 'INSTAGRAM' ? 'https://www.instagram.com' : 'https://chat.zalo.me';
+        const doOpen = confirm(`\u2705 \u0110\u00c3 DUY\u1ec6T & SAO CH\u00c9P B\u00c0I VI\u1ebeT V\u00c0O B\u1ed8 NH\u1eda T\u1ea0M!\n\nN\u1ed9i dung b\u00e0i vi\u1ebft k\u00e8m link ti\u1ebfp th\u1ecb \u0111\u00e3 s\u1eb5n s\u00e0ng.\n\nB\u1ea5m [OK] \u0111\u1ec3 m\u1edf ${post.platform} v\u00e0 d\u00e1n (Ctrl+V) \u0111\u0103ng b\u00e0i!`);
+        if (doOpen) window.open(fallbackUrl, '_blank');
       }
       this.renderCtvSocialTab();
     },
@@ -566,7 +698,10 @@
 
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(publishedText).then(() => {
-          alert(`\u2705 \u0110\u00c3 SAO CH\u00c9P B\u00c0I VI\u1ebeT K\u00c8M LINK TI\u1ebeP TH\u1eca RI\u00caNG!\n\nB\u1ea1n c\u00f3 th\u1ec3 d\u00e1n (Paste) l\u00ean Facebook, Zalo, Story c\u00e1 nh\u00e2n \u0111\u1ec3 b\u1eaft \u0111\u1ea7u thu h\u00fat kh\u00e1ch.`);
+          const acc = (db.socialAccounts || []).find(a => a.ctvId === currentCtvId && a.platform === post.platform && a.status === 'CONNECTED');
+          const targetUrl = (acc && acc.pageUrl) ? acc.pageUrl : (post.platform === 'FACEBOOK' ? 'https://www.facebook.com' : post.platform === 'TIKTOK' ? 'https://www.tiktok.com' : post.platform === 'INSTAGRAM' ? 'https://www.instagram.com' : 'https://chat.zalo.me');
+          const doOpen = confirm(`\u2705 \u0110\u00c3 SAO CH\u00c9P B\u00c0I VI\u1ebeT K\u00c8M LINK TI\u1ebeP TH\u1eca RI\u00caNG!\n\nB\u1ea1n c\u00f3 mu\u1ed1n m\u1edf trang ${acc ? acc.accountName : post.platform} ngay b\u00e2y gi\u1edd \u0111\u1ec3 d\u00e1n (Ctrl+V) \u0111\u0103ng b\u00e0i kh\u00f4ng?`);
+          if (doOpen) window.open(targetUrl, '_blank');
         });
       } else {
         prompt("Sao ch\u00e9p b\u00e0i vi\u1ebft:", publishedText);
@@ -834,10 +969,14 @@
                 <p class="text-xs text-indigo-200">C\u1ed9ng t\u00e1c vi\u00ean: <span class="font-bold text-white">${ctv.name}</span> (${ctv.id}) &bull; M\u00e3 Ti\u1ebfp Th\u1ecb: <span class="font-mono font-bold text-amber-300">${ctv.refCode}</span></p>
               </div>
 
-              <div class="flex items-center gap-2">
-                <button type="button" onclick="window.HahaSocialHub.openSimulateLeadModal()" class="px-3.5 py-2 rounded-xl text-xs font-extrabold bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-md transition-all active:scale-95 flex items-center space-x-1.5">
-                  <span>\u26A1</span>
-                  <span>Th\u1eed Nghi\u1ec7m Kh\u00e1ch \u0110\u1eb7t Tour</span>
+              <div class="flex flex-wrap items-center gap-2">
+                <button type="button" onclick="window.HahaSocialHub.copyMyStorefrontLink('${ctv.id}')" class="px-3.5 py-2 rounded-xl text-xs font-extrabold bg-white/10 hover:bg-white/20 text-white border border-white/20 shadow-xs transition-all active:scale-95 flex items-center space-x-1.5" title="Sao ch\u00e9p link ti\u1ebfp th\u1ecb g\u1eafn tr\u00ean ti\u1ec3u s\u1eed Bio MXH">
+                  <span>\uD83D\uDCCB</span>
+                  <span>Sao Ch\u00e9p Link Bio</span>
+                </button>
+                <button type="button" onclick="window.HahaSocialHub.openMyStorefront('${ctv.id}')" class="px-3.5 py-2 rounded-xl text-xs font-extrabold bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-md transition-all active:scale-95 flex items-center space-x-1.5" title="M\u1edf trang b\u00e1n tour th\u1ef1c t\u1ebf g\u1eafn m\u00e3 CTV c\u1ee7a b\u1ea1n">
+                  <span>\uD83C\uDF10</span>
+                  <span>M\u1edf Trang B\u00e1n Tour</span>
                 </button>
               </div>
             </div>
@@ -988,13 +1127,26 @@
                       ` : ''}
                     </div>
 
+                    ${isConn && acc.pageUrl ? `
+                      <div class="pt-1">
+                        <a href="${acc.pageUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center space-x-1 text-[11px] text-indigo-600 hover:text-indigo-800 font-bold underline">
+                          <span>M\u1edf trang MXH \u2197</span>
+                        </a>
+                      </div>
+                    ` : ''}
+
                     <div class="pt-2 border-t border-slate-200 flex items-center justify-between">
                       ${isConn ? `
-                        <button type="button" onclick="window.HahaSocialHub.disconnectAccount('${acc.id}')" class="text-[11px] font-bold text-rose-600 hover:text-rose-800 underline">
-                          Ng\u1eaft k\u1ebft n\u1ed1i
-                        </button>
+                        <div class="flex items-center justify-between w-full">
+                          <button type="button" onclick="window.HahaSocialHub.openConnectAccountModal('${key}')" class="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 underline">
+                            C\u00e0i \u0111\u1eb7t
+                          </button>
+                          <button type="button" onclick="window.HahaSocialHub.disconnectAccount('${acc.id}')" class="text-[11px] font-bold text-rose-600 hover:text-rose-800 underline">
+                            Ng\u1eaft k\u1ebft n\u1ed1i
+                          </button>
+                        </div>
                       ` : `
-                        <button type="button" onclick="window.HahaSocialHub.connectAccount('${key}')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all active:scale-95">
+                        <button type="button" onclick="window.HahaSocialHub.openConnectAccountModal('${key}')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all active:scale-95">
                           + K\u1ebft n\u1ed1i OAuth
                         </button>
                       `}
@@ -1497,11 +1649,7 @@
     },
 
     openSimulateLeadModal: function() {
-      const name = prompt("Nh\u1eadp T\u00ean kh\u00e1ch h\u00e0ng ti\u1ec1m n\u0103ng th\u1eed nghi\u1ec7m:", "Tr\u1ea7n V\u0103n Minh");
-      if (!name) return;
-      const phone = prompt("Nh\u1eadp S\u1ed1 \u0111i\u1ec7n tho\u1ea1i kh\u00e1ch h\u00e0ng:", "0918765432");
-      if (!phone) return;
-      this.simulateIncomingLead(null, 'cattien_nov26', name, phone, 4);
+      this.openMyStorefront();
     },
 
     // 12. T\u00c1C V\u1ee4 LLM TR\u1ef0C TI\u1ebeP T\u1eea B\u1ed8 N\u00c3O AI CHO CTV (100% TI\u1ebeNG VI\u1ec6T S\u1ea0CH)
