@@ -882,7 +882,7 @@ const ROLE_PERMISSIONS = {
   'KE_TOAN': [6, 7],                  // Tài chính & Sổ quỹ thu chi, Đối soát hoa hồng CTV & Duyệt lệnh NCC (Tuyệt đối không can thiệp CRM/Báo giá/Điều hành)
   'CTV': [10],                        // Cổng thông tin đối tác CTV
   'SUPPLIER': [11],
-  'MARKETING': [12, 1, 2, 8]       // Ph\u00f2ng Marketing L\u1eef h\u00e0nh & \u0110i\u1ec1u ph\u1ed1i MXH CTV                    // Cổng quản trị đối tác cung ứng riêng biệt
+  'MARKETING': [1, 2, 8, 10, 12]       // Ph\u00f2ng Marketing L\u1eef h\u00e0nh & \u0110i\u1ec1u ph\u1ed1i MXH CTV                    // Cổng quản trị đối tác cung ứng riêng biệt
 };
 
 // ==========================================
